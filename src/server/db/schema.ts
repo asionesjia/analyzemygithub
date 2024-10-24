@@ -1,17 +1,16 @@
-import { relations, sql } from 'drizzle-orm'
-import {
-  index,
-  integer,
-  pgTable,
-  primaryKey,
-  serial,
-  text,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core'
-import { type AdapterAccount } from 'next-auth/adapters'
+import {relations, sql} from 'drizzle-orm'
+import {index, integer, pgTableCreator, primaryKey, serial, text, timestamp, varchar,} from 'drizzle-orm/pg-core'
+import {type AdapterAccount} from 'next-auth/adapters'
 
-export const posts = pgTable(
+/**
+ * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
+ * database instance for multiple projects.
+ *
+ * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
+ */
+export const createTable = pgTableCreator((name) => `analyzemygithub_${name}`)
+
+export const posts = createTable(
   'post',
   {
     id: serial('id').primaryKey(),
@@ -30,7 +29,7 @@ export const posts = pgTable(
   }),
 )
 
-export const users = pgTable('user', {
+export const users = createTable('user', {
   id: varchar('id', { length: 255 })
     .notNull()
     .primaryKey()
@@ -48,7 +47,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
 }))
 
-export const accounts = pgTable(
+export const accounts = createTable(
   'account',
   {
     userId: varchar('user_id', { length: 255 })
@@ -79,7 +78,7 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
   user: one(users, { fields: [accounts.userId], references: [users.id] }),
 }))
 
-export const sessions = pgTable(
+export const sessions = createTable(
   'session',
   {
     sessionToken: varchar('session_token', { length: 255 }).notNull().primaryKey(),
@@ -100,7 +99,7 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
   user: one(users, { fields: [sessions.userId], references: [users.id] }),
 }))
 
-export const verificationTokens = pgTable(
+export const verificationTokens = createTable(
   'verification_token',
   {
     identifier: varchar('identifier', { length: 255 }).notNull(),
