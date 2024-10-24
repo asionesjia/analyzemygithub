@@ -7,4 +7,5 @@ export default {
   dbCredentials: {
     url: envServer.DATABASE_URL,
   },
+  tablesFilter: ['analyzemygithub_*'],
 } satisfies Config
