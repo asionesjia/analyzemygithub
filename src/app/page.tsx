@@ -1,14 +1,13 @@
-import Link from "next/link";
-
-import { LatestPost } from "~/app/_components/post";
-import { api, HydrateClient } from "~/trpc/server";
-import {auth} from "~/server/auth";
+import Link from 'next/link'
+import { api, HydrateClient } from '~/trpc/server'
+import { auth } from '~/server/auth'
+import Github from '~/app/_components/github'
 
 export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
-  const session = await auth();
+  const hello = await api.post.hello({ text: 'from tRPC' })
+  const session = await auth()
 
-  void api.post.getLatest.prefetch();
+  void api.post.getLatest.prefetch()
 
   return (
     <HydrateClient>
@@ -25,8 +24,8 @@ export default async function Home() {
             >
               <h3 className="text-2xl font-bold">First Steps →</h3>
               <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
+                Just the basics - Everything you need to know to set up your database and
+                authentication.
               </div>
             </Link>
             <Link
@@ -36,14 +35,13 @@ export default async function Home() {
             >
               <h3 className="text-2xl font-bold">Documentation →</h3>
               <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
+                Learn more about Create T3 App, the libraries it uses, and how to deploy it.
               </div>
             </Link>
           </div>
           <div className="flex flex-col items-center gap-2">
             <p className="text-2xl text-white">
-              {hello ? hello.greeting : "Loading tRPC query..."}
+              {hello ? hello.greeting : 'Loading tRPC query...'}
             </p>
 
             <div className="flex flex-col items-center justify-center gap-4">
@@ -51,17 +49,17 @@ export default async function Home() {
                 {session && <span>Logged in as {session.user?.name}</span>}
               </p>
               <Link
-                href={session ? "/api/auth/signout" : "/api/auth/signin"}
+                href={session ? '/api/auth/signout' : '/api/auth/signin'}
                 className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
               >
-                {session ? "Sign out" : "Sign in"}
+                {session ? 'Sign out' : 'Sign in'}
               </Link>
             </div>
           </div>
 
-          {session?.user && <LatestPost />}
+          {session?.user && <Github />}
         </div>
       </main>
     </HydrateClient>
-  );
+  )
 }
