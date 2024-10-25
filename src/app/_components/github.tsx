@@ -1,13 +1,13 @@
 'use client'
 
-import { api } from '~/trpc/react'
+import { apiClient } from '~/trpc/react'
 import { useState } from 'react'
 
 type GithubProps = {}
 
 const Github = ({}: GithubProps) => {
   const [enabled, setEnabled] = useState(false)
-  const { data, refetch } = api.github.hello.useQuery({ username: 'Samueli924' }, { enabled })
+  const { data, refetch } = apiClient.github.hello.useQuery({ username: 'Samueli924' }, { enabled })
 
   const handleClick = async () => {
     setEnabled(true)

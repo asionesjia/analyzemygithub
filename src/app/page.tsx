@@ -1,13 +1,13 @@
 import Link from 'next/link'
-import { api, HydrateClient } from '~/trpc/server'
+import { apiServer, HydrateClient } from '~/trpc/server'
 import { auth } from '~/server/auth'
 import Github from '~/app/_components/github'
 
 export default async function Home() {
-  const hello = await api.post.hello({ text: 'from tRPC' })
+  const hello = await apiServer.post.hello({ text: 'from tRPC' })
   const session = await auth()
 
-  void api.post.getLatest.prefetch()
+  void apiServer.post.getLatest.prefetch()
 
   return (
     <HydrateClient>
