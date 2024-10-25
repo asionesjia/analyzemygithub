@@ -47,6 +47,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     GitHub({
       clientId: envServer.AUTH_GITHUB_ID,
       clientSecret: envServer.AUTH_GITHUB_SECRET,
+      authorization: {
+        params: {
+          scope: 'read:user read:org public_repo read:project', // 获取用户的公开信息和公开组织信息
+        },
+      },
     }),
   ],
   adapter: DrizzleAdapter(db, {
@@ -59,14 +64,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
   debug: envServer.NODE_ENV === 'development',
   callbacks: {
-    session: async ({ session, token, user }) => {
-      console.log('session', session, 'token', token)
+    session: async ({ session, token }) => {
       session.user.githubAccessToken = token?.githubAccessToken
       return {
         ...session,
       }
     },
-    jwt: async ({ token, account, user }) => {
+    jwt: async ({ token, account }) => {
       if (account) {
         return {
           ...token,
