@@ -28,7 +28,14 @@ export function constructMetadata({
   return {
     title,
     description,
-    keywords: ['React', 'Tailwind CSS', 'Framer Motion', 'Landing Page', 'Components', 'Next.js'],
+    keywords: [
+      'GitHub',
+      'Developer Assessment',
+      'TalentRank',
+      'Open Source Contribution',
+      'Developer Ranking',
+      'AnalyzeMyGitHub',
+    ],
     openGraph: {
       title,
       description,
@@ -47,17 +54,17 @@ export function constructMetadata({
       title,
       description,
       images: [image],
-      creator: '@dillionverma',
+      creator: '@asionesjia',
     },
     icons: '/favicon.ico',
-    metadataBase: new URL('https://magicui.design'),
+    metadataBase: new URL('https://analyzemygithub.com'),
     authors: [
       {
-        name: 'dillionverma',
-        url: 'https://twitter.com/dillionverma',
+        name: 'Asiones Jia',
+        url: 'https://twitter.com/AsionesJia',
       },
     ],
-    creator: 'dillionverma',
+    creator: 'Asiones Jia',
     ...props,
   }
 }
