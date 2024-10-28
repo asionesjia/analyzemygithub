@@ -9,6 +9,8 @@ import { ThemeProvider } from '~/components/theme-provider'
 import { Analytics } from '~/components/analytics'
 import { TooltipProvider } from '~/components/ui/tooltip'
 import { Toaster } from '~/components/ui/toaster'
+import { AnimatePresence } from 'framer-motion'
+import { SessionProvider } from 'next-auth/react'
 
 export const metadata: Metadata = constructMetadata({
   title: 'Analyze Your Github',
@@ -34,13 +36,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           fontSans.variable,
         )}
       >
-        <ThemeProvider attribute="class" defaultTheme="light">
-          <TooltipProvider>
-            <TRPCReactProvider>{children}</TRPCReactProvider>
-            <Toaster />
-            <Analytics />
-          </TooltipProvider>
-        </ThemeProvider>
+        <SessionProvider>
+          <AnimatePresence>
+            <ThemeProvider attribute="class" defaultTheme="light">
+              <TooltipProvider>
+                <TRPCReactProvider>{children}</TRPCReactProvider>
+                <Toaster />
+                <Analytics />
+              </TooltipProvider>
+            </ThemeProvider>
+          </AnimatePresence>
+        </SessionProvider>
       </body>
     </html>
   )
