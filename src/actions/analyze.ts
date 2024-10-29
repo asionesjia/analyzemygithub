@@ -1,43 +1,26 @@
-import { z } from 'zod'
+'use server'
 
-const publicAnalyzeActionSchema = z.object({
-  accessToken: z.string(),
-})
+import { streamResponse } from '~/actions/iterateStream'
 
-function* foo(index: number) {
-  while (index < 2) {
-    yield index
-    index++
-  }
-}
-
-export async function* publicAnalyzeAction() {
+export const publicAnalyzeAction = streamResponse(async function* () {
   try {
-    for (let i = 0; i < 10; i++) {
-      console.log(i)
-      yield { index: i.toString() }
-      i++
-    }
-    return { index: 'ok' }
+    // const githubData = await apiServer.github.hello({ username: 'nana' })
+    // console.log(githubData)
+    yield { index: 1, message: 'Step1', error: null }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    yield { index: 2, message: 'Step2', error: null }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    yield { index: 3, message: 'Step3', error: null }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    yield { index: 4, message: 'Step4', error: null }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    yield { index: 5, message: 'Step5', error: null }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    yield { index: 6, message: 'Step6', error: null }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    yield { index: 7, message: 'Step7', error: null }
   } catch (e) {
     console.error(e)
-    return { error: '' }
+    return { index: undefined, message: undefined, error: e.message }
   }
-}
-
-export async function* fetchDataAction() {
-  yield '第一个数据块'
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  yield '第二个数据块'
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  yield '第三个数据块'
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  yield '第三个数据块'
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  yield '第三个数据块'
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  yield '第三个数据块'
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  yield '第三个数据块'
-  return { done: true }
-}
+})
