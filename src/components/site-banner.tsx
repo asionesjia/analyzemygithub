@@ -18,7 +18,7 @@ export function SiteBanner() {
         </span>{' '}
         <ChevronRight className="ml-1 mt-[3px] hidden size-4 transition-all duration-300 ease-out group-hover:translate-x-1 lg:inline-block" />
       </Link>
-      <hr className="absolute bottom-0 m-0 h-px w-full bg-neutral-200/30" />
+      <hr className="absolute bottom-0 right-0 m-0 h-px w-full bg-neutral-200/30" />
     </div>
   )
 }

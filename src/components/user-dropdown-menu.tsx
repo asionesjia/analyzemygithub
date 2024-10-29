@@ -24,7 +24,11 @@ const UserDropdownMenu = ({}: UserDropdownMenuProps) => {
         <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <DropdownMenuTrigger asChild>
             <Avatar className="size-9 cursor-pointer">
-              <AvatarImage alt={session.user?.name || ''} src={session.user?.image || undefined} />
+              <AvatarImage
+                alt={session.user?.name || ''}
+                src={session.user?.image || undefined}
+                className="size-9 h-9 w-9"
+              />
               <AvatarFallback>
                 {(session.user?.name || session.user?.name || 'User')
                   .split(' ')
