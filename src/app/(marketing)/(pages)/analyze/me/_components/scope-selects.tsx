@@ -1,11 +1,11 @@
 import React, { ForwardRefExoticComponent, memo, RefAttributes, useCallback, useState } from 'react'
 import { BlurInEffect } from '~/components/ui/blur-in-effect'
-import LineSeparator from '~/components/ui/line-separator'
 import { BookLock, BookMarked, LucideProps } from 'lucide-react'
 import ScopeDescription from '~/app/(marketing)/(pages)/analyze/me/_components/scope-description'
 import { Icons } from '~/components/icons'
 import { useRouter } from 'next/navigation'
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
+import FullWidthButton from '~/app/_components/ui/full-width-button'
 
 type scopeSelectsDataProps = {
   title: string
@@ -22,7 +22,7 @@ const scopeSelectsData: scopeSelectsDataProps[] = [
     description: 'Instantly analyze only your public repositories for a quick start.',
     hoverLabel: 'Start Public Analysis',
     iconLeft: BookMarked,
-    iconRight: Icons.arrowUpRight,
+    iconRight: Icons.arrowRight,
     position: 1,
   },
   {
@@ -31,7 +31,7 @@ const scopeSelectsData: scopeSelectsDataProps[] = [
       'Authorize access for in-depth analysis of all repositories, including private and organizational (read-only). We ensure no access tokens or repository data are stored, retaining only the final evaluation scores.',
     hoverLabel: 'Get Full Analysis',
     iconLeft: BookLock,
-    iconRight: Icons.arrowRight,
+    iconRight: Icons.arrowUpRight,
     position: 2,
   },
 ]
@@ -65,25 +65,15 @@ const ScopeSelectOption = memo(
     const router = useRouter()
     return (
       <BlurInEffect index={blurInEffectIndex}>
-        <button
+        <FullWidthButton
+          label={title}
+          hrBottom={position === 2}
+          iconLeft={IconLeft}
+          iconRight={IconRight}
           onMouseEnter={() => setHovered(position)}
           onMouseLeave={() => setHovered(null)}
           onClick={() => onClick?.('public', router)}
-          type="button"
-          className="group w-full"
-        >
-          <LineSeparator />
-          <div className="flex w-full items-center justify-between py-4 md:py-8">
-            <div className="flex items-center justify-between space-x-4">
-              <IconLeft className="size-8" />
-              <div className="border-b border-foreground text-xl font-semibold transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:border-dashed md:text-2xl">
-                {title}
-              </div>
-            </div>
-            <IconRight className="size-8 transition-all duration-300 ease-out group-hover:-translate-x-1" />
-          </div>
-          {position === 2 && <LineSeparator />}
-        </button>
+        />
       </BlurInEffect>
     )
   },

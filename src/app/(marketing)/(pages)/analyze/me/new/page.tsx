@@ -6,8 +6,9 @@ import { publicAnalyzeAction } from '~/actions/analyze'
 import { iterateStreamResponse } from '~/actions/iterateStream'
 import { BlurInEffect } from '~/components/ui/blur-in-effect'
 import LineSeparator from '~/components/ui/line-separator'
-import { Button } from '~/components/ui/button'
 import confetti from 'canvas-confetti'
+import FullWidthButton from '~/app/_components/ui/full-width-button'
+import { ArrowRight, ChartNoAxesCombined, Play } from 'lucide-react'
 
 const loadingStates = [
   {
@@ -46,17 +47,24 @@ type InteractionButtonsProps = {
 const InteractionButtons = memo(
   ({ isAnalyzed, loading, setToggleLoader, handleAnalyze }: InteractionButtonsProps) => {
     return (
-      <div className="flex w-full items-center justify-end p-4 md:p-10">
+      <div className="w-full p-4 md:p-10">
+        <BlurInEffect index={3}>
+          <FullWidthButton
+            label={isAnalyzed ? 'Go Now!' : 'Start Analysis'}
+            iconLeft={ChartNoAxesCombined}
+            iconRight={isAnalyzed ? ArrowRight : Play}
+            onClick={isAnalyzed ? () => console.log('Go Now!') : handleAnalyze}
+            isLoading={loading}
+            loadingText="Analyzing..."
+          />
+        </BlurInEffect>
         {loading && (
           <BlurInEffect index={2} className="pr-4">
-            <Button onClick={() => setToggleLoader(true)}>Details</Button>
+            <FullWidthButton onClick={() => setToggleLoader(true)} hrTop={false}>
+              Analyzing Details
+            </FullWidthButton>
           </BlurInEffect>
         )}
-        <BlurInEffect index={3}>
-          <Button onClick={handleAnalyze} isLoading={loading}>
-            {loading ? 'Analyzing...' : 'Start Analyzing'}
-          </Button>
-        </BlurInEffect>
       </div>
     )
   },
