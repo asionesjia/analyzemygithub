@@ -45,7 +45,7 @@ const FullWidthButton = React.forwardRef<HTMLButtonElement, FullWidthButtonProps
         {...props}
       >
         {hrTop && <LineSeparator />}
-        <div className="flex w-full items-center justify-between py-4 md:py-8">
+        <div className="flex w-full items-center justify-between py-4 pr-4 md:py-8">
           <div className="flex items-center justify-between space-x-4">
             {isLoading ? (
               <Loader2 className="size-8 animate-spin" />
