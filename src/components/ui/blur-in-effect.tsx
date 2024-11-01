@@ -24,7 +24,7 @@ export const BlurInEffect = ({
   const ref = useRef<HTMLDivElement | null>(null)
   const isInView = useInView(ref as RefObject<Element>, { once: true })
 
-  const MotionTag = motion(as) // 使用 motion(as) 动态渲染标签
+  const MotionTag = motion.create(as) // 使用 motion(as) 动态渲染标签
 
   return (
     <MotionTag
