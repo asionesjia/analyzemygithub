@@ -6,15 +6,13 @@ import { buttonVariants } from '~/components/ui/button'
 import { ChevronRight } from 'lucide-react'
 import { Spotlight } from '~/components/ui/spotlight'
 import { BlurInEffect } from '~/components/ui/blur-in-effect'
-import { auth } from '~/server/auth'
 
 type HeroProps = {}
 
 const Hero = async ({}: HeroProps) => {
-  const session = await auth()
   return (
     <section id="hero">
-      <div className="bg-grid-white/[0.02] relative flex h-[calc(100vh-4rem)] w-full flex-col overflow-hidden bg-background antialiased md:items-center md:justify-center">
+      <div className="relative flex h-[calc(100vh-4rem)] w-full flex-col overflow-hidden bg-background antialiased bg-grid-white/[0.02] md:items-center md:justify-center">
         <Spotlight className="-left-10 -top-60 md:-top-40 md:left-0" fill="white" />
         <ShootingStars />
         <StarsBackground />
