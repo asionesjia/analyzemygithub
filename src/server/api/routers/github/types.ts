@@ -1,3 +1,18 @@
+export type Viewer = {
+  viewer: {
+    login: string
+  }
+}
+
+export type BaseProfile = {
+  user: GitHubUser
+} & Viewer
+
+export type Contributions = {
+  user: {
+    contributionsCollection: ContributionsCollection
+  }
+} & Viewer
 // 主查询结构
 export type GitHubUserQuery = {
   viewer: {
@@ -173,4 +188,13 @@ export type ProjectV2Connection = {
     closed: boolean // 项目是否已关闭
     items: { totalCount: number } // 项目项总数
   }[]
+}
+
+export type GithubError = {
+  type: string
+  message: string
+}
+
+export type GithubErrors = {
+  errors: GithubError[]
 }

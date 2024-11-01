@@ -1,24 +1,17 @@
-import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc'
-import { z } from 'zod'
-import { GitHubUserQuery } from '~/types/github'
-
-export const githubRouter = createTRPCRouter({
-  hello: protectedProcedure
-    .input(z.object({ username: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const response = await fetch('https://api.github.com/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `bearer ${ctx.session.user.githubAccessToken}`, // 如果需要授权
-        },
-        body: JSON.stringify({
-          query: `
+export const QUERY_VIEWER = `
 query {
+  viewer {
+    login
+  }
+}
+`
+
+export const QUERY_BASE_PROFILE = `
+query($username: String!) {
   viewer {
     login  # 当前登录的用户的 GitHub 用户名
   }
-  user(login: ${'"' + input.username + '"'}) {
+  user(login: $username) {
     login  # 指定用户的 GitHub 用户名
     name  # 指定用户的显示名称
     bio  # 指定用户的个人简介
@@ -28,7 +21,75 @@ query {
     twitterUsername  # 用户的 Twitter 用户名
     avatarUrl  # 用户的头像 URL
     createdAt  # 用户的账户创建时间
+  }
+}`
 
+export const QUERY_CONTRIBUTIONS = (from: any, to: any) => `
+  query($username: String!${from ? ', $from: DateTime!' : ''}${to ? ', $to: DateTime!' : ''}) {
+  viewer {
+    login  # 当前登录的用户的 GitHub 用户名
+  }
+  user(login: $username) {
+        # 贡献统计信息
+    contributionsCollection${from || to ? '(' : ''}${from ? 'from: $from' : ''}${from && to ? ', ' : ''}${to ? 'to: $to' : ''}${from || to ? ')' : ''} {
+      totalCommitContributions  # 用户的总提交次数
+      totalPullRequestContributions  # 用户的总 Pull Request 次数
+      totalIssueContributions  # 用户的总 Issue 提交次数
+      totalRepositoryContributions  # 用户的总仓库贡献次数
+      commitContributionsByRepository(maxRepositories: 5) {
+        repository {
+          name  # 用户提交的最近 5 个仓库名称
+        }
+      }
+      # 拓展贡献趋势数据
+      contributionCalendar {
+        totalContributions  # 用户的总贡献次数
+        weeks {
+          contributionDays {
+            date  # 每日贡献日期
+            contributionCount  # 每日贡献次数
+            color  # 贡献的颜色代码（表示热度）
+          }
+        }
+      }
+    }
+  }
+}
+`
+export const QUERY_CONTRIBUTION_CALENDAR = `
+  query($username: String!, $from: DateTime!) {
+  viewer {
+    login  # 当前登录的用户的 GitHub 用户名
+  }
+  user(login: $username) {
+        # 贡献统计信息
+    contributionsCollection(from: $from) {
+      totalCommitContributions  # 用户的总提交次数
+      totalPullRequestContributions  # 用户的总 Pull Request 次数
+      totalIssueContributions  # 用户的总 Issue 提交次数
+      totalRepositoryContributions  # 用户的总仓库贡献次数
+      commitContributionsByRepository(maxRepositories: 100) {
+        repository {
+          name  # 用户提交的最近 5 个仓库名称
+        }
+      }
+      # 拓展贡献趋势数据
+      contributionCalendar {
+        totalContributions  # 用户的总贡献次数
+        weeks {
+          contributionDays {
+            date  # 每日贡献日期
+            contributionCount  # 每日贡献次数
+            color  # 贡献的颜色代码（表示热度）
+          }
+        }
+      }
+    }
+  }
+}
+`
+
+const page = `
     # 贡献统计信息
     contributionsCollection {
       totalCommitContributions  # 用户的总提交次数
@@ -52,7 +113,6 @@ query {
         }
       }
     }
-    
     # 用户的公开仓库
     repositories(first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
       nodes {
@@ -176,13 +236,4 @@ query {
         }
       }
     }
-  }
-}`,
-          variables: {}, // 如果有变量的话可以在这里传递
-        }),
-      })
-
-      const data = await response.json()
-      return data.data as GitHubUserQuery
-    }),
-})
+  }`
