@@ -49,7 +49,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       clientSecret: envServer.AUTH_GITHUB_SECRET,
       authorization: {
         params: {
-          scope: 'read:user read:org public_repo read:project', // 获取用户的公开信息和公开组织信息
+          scope:
+            'read:discussion, read:enterprise, read:gpg_key, read:org, read:package, read:project, read:public_key, read:repo_hook, repo, user', // 获取用户的公开信息和公开组织信息
         },
       },
     }),
@@ -70,7 +71,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         ...session,
       }
     },
-    jwt: async ({ token, account }) => {
+    jwt: async ({ token, account, profile }) => {
       if (account) {
         return {
           ...token,
