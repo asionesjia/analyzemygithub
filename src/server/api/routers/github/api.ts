@@ -1,16 +1,20 @@
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc'
 import { z } from 'zod'
-import { Octokit } from '@octokit/core'
-import { paginateGraphQL } from '@octokit/plugin-paginate-graphql'
 import { Contributions, GithubError } from '~/server/api/routers/github/types'
 import {
   queryBaseProfile,
   queryContributions,
+  queryFollowers,
+  queryFollowing,
+  queryIssues,
+  queryOrganizations,
+  queryProjectsV2,
+  queryPullRequests,
+  queryRepositories,
+  queryStarredRepositories,
   queryViewer,
 } from '~/server/api/routers/github/query'
 import { mergeContributions } from '~/server/api/routers/github/utils'
-
-const MyOctokit = Octokit.plugin(paginateGraphQL)
 
 export const githubRouter = createTRPCRouter({
   getViewer: protectedProcedure.query(async ({ ctx }) => {
@@ -136,6 +140,214 @@ export const githubRouter = createTRPCRouter({
       } catch (e) {
         console.log(e)
         return { data: null, error: '查询失败' }
+      }
+    }),
+  getRepositories: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryRepositories(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getStarredRepositories: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryStarredRepositories(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getPullRequests: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryPullRequests(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getIssues: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryIssues(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getFollowers: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryFollowers(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getFollowing: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryFollowing(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getOrganizations: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryOrganizations(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getProjectsV2: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryProjectsV2(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
       }
     }),
 })

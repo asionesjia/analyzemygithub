@@ -35,6 +35,24 @@ const loadingStates = [
   {
     text: 'Welcome to F**** C***',
   },
+  {
+    text: 'Welcome to F**** C***',
+  },
+  {
+    text: 'Welcome to F**** C***',
+  },
+  {
+    text: 'Welcome to F**** C***',
+  },
+  {
+    text: 'Welcome to F**** C***',
+  },
+  {
+    text: 'Welcome to F**** C***',
+  },
+  {
+    text: 'Welcome to F**** C***',
+  },
 ]
 
 type InteractionButtonsProps = {

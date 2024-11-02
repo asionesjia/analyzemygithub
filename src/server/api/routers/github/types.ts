@@ -13,25 +13,119 @@ export type Contributions = {
     contributionsCollection: ContributionsCollection
   }
 } & Viewer
-// 主查询结构
-export type GitHubUserQuery = {
-  viewer: {
-    login: string // 当前登录的用户的 GitHub 用户名
+
+export type Repositories = {
+  user: {
+    repositories: RepositoryConnection
   }
-  user: GitHubUser // 指定的 GitHub 用户信息
+}
+
+export type StarredRepositories = {
+  user: {
+    starredRepositories: StarredRepositoryConnection
+  }
+}
+
+export type PullRequests = {
+  user: {
+    pullRequests: PullRequestConnection
+  }
+}
+
+export type Issues = {
+  user: {
+    issues: IssueConnection
+  }
+}
+
+export type Followers = {
+  user: {
+    followers: FollowerConnection
+  }
+}
+
+export type Following = {
+  user: {
+    following: FollowingConnection
+  }
+}
+
+export type Organizations = {
+  user: {
+    organizations: OrganizationConnection
+  }
+}
+
+export type ProjectsV2 = {
+  user: {
+    projectsV2: ProjectV2Connection
+  }
+}
+
+export interface UserCommitsInRepoQuery {
+  user: {
+    login: string
+    contributionsCollection: {
+      commitContributionsByRepository: {
+        repository: {
+          name: string
+          isPrivate: boolean
+        }
+        contributions: {
+          nodes: {
+            commit: {
+              oid: string
+              message: string
+              abbreviatedOid: string
+              committedDate: string
+              authoredDate: string
+              additions: number
+              deletions: number
+              changedFiles: number
+              associatedPullRequests: {
+                nodes: {
+                  title: string
+                  state: 'OPEN' | 'CLOSED' | 'MERGED'
+                  author: {
+                    login: string
+                    avatarUrl: string
+                  }
+                }[]
+              }
+            }
+          }[]
+          totalCount: number
+        }
+      }[]
+    }
+  }
+}
+
+export interface GistsQuery {
+  user: {
+    gists: GistConnection
+  }
 }
 
 // 用户的详细信息结构
 export type GitHubUser = {
-  login: string // 用户名
-  name: string | null // 用户的显示名称
-  bio: string | null // 用户的个人简介
-  company: string | null // 用户当前的公司信息
-  location: string | null // 用户的位置
-  email: string | null // 用户的公开电子邮件地址
-  twitterUsername: string | null // 用户的 Twitter 用户名
-  avatarUrl: string // 用户头像 URL
-  createdAt: string // 用户账户的创建时间
+  login: string
+  name?: string | null
+  bio?: string | null
+  company?: string | null
+  location?: string | null
+  email?: string | null
+  twitterUsername?: string | null
+  avatarUrl: string
+  hasSponsorsListing: boolean
+  isBountyHunter: boolean
+  isCampusExpert: boolean
+  isDeveloperProgramMember: boolean
+  isEmployee: boolean
+  isGitHubStar: boolean
+  isHireable: boolean
+  websiteUrl?: string | null
+  createdAt: string
 
   // 贡献统计信息
   contributionsCollection: ContributionsCollection
@@ -59,6 +153,8 @@ export type GitHubUser = {
 
   // 用户的项目信息
   projectsV2: ProjectV2Connection
+
+  gists: GistConnection
 }
 
 // 贡献统计结构
@@ -70,6 +166,7 @@ export type ContributionsCollection = {
   commitContributionsByRepository: {
     repository: {
       name: string // 仓库名称
+      isPrivate: boolean
     }
   }[]
   contributionCalendar: ContributionCalendar // 用户贡献日历
@@ -82,6 +179,12 @@ export type ContributionCalendar = {
     contributionDays: {
       date: string // 每日贡献日期
       contributionCount: number // 每日贡献数
+      contributionLevel:
+        | 'FIRST_QUARTILE'
+        | 'FOURTH_QUARTILE'
+        | 'NONE'
+        | 'SECOND_QUARTILE'
+        | 'THIRD_QUARTILE' // 贡献度等级
       color: string // 每日贡献颜色（热度）
     }[]
   }[]
@@ -101,10 +204,23 @@ export type Repository = {
   stargazerCount: number // star 数
   forkCount: number // fork 数
   primaryLanguage: { name: string } | null // 主要语言
+  languages: {
+    edges: {
+      node: {
+        name: string
+      }
+      size: number
+    }[]
+  }
   createdAt: string // 仓库创建日期
   updatedAt: string // 仓库最后更新时间
   pullRequests: { totalCount: number } // 仓库中的 PR 总数
+  openPullRequests: { totalCount: number } // 仓库中的 PR 总数
+  closedPullRequests: { totalCount: number } // 仓库中的 PR 总数
+  mergedPullRequests: { totalCount: number } // 仓库中的 PR 总数
   issues: { totalCount: number } // 仓库中的 Issue 总数
+  openIssues: { totalCount: number } // 仓库中的 Issue 总数
+  closedIssues: { totalCount: number } // 仓库中的 Issue 总数
   projectsV2: {
     nodes: {
       title: string // 项目标题
@@ -147,11 +263,6 @@ export type IssueConnection = {
 
 // 粉丝信息结构
 export type FollowerConnection = {
-  nodes: {
-    login: string // 粉丝的用户名
-    name: string | null // 粉丝的显示名称
-    avatarUrl: string // 粉丝的头像 URL
-  }[]
   totalCount: number // 总粉丝数
 }
 
@@ -179,6 +290,7 @@ export type OrganizationConnection = {
       }[]
     }
   }[]
+  totalCount: number
 }
 
 // 项目信息结构
@@ -188,6 +300,23 @@ export type ProjectV2Connection = {
     closed: boolean // 项目是否已关闭
     items: { totalCount: number } // 项目项总数
   }[]
+  totalCount: number
+}
+
+export type GistConnection = {
+  nodes: {
+    name: string
+    description?: string | null
+    createdAt: string
+    updatedAt: string
+    files: {
+      name: string
+      language: {
+        name: string
+      } | null
+    }[]
+  }[]
+  totalCount: number
 }
 
 export type GithubError = {
