@@ -9,6 +9,7 @@ import LineSeparator from '~/components/ui/line-separator'
 import confetti from 'canvas-confetti'
 import FullWidthButton from '~/app/_components/ui/full-width-button'
 import { ArrowRight, ChartNoAxesCombined, Play } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 const loadingStates = [
   {
@@ -64,6 +65,10 @@ type InteractionButtonsProps = {
 
 const InteractionButtons = memo(
   ({ isAnalyzed, loading, setToggleLoader, handleAnalyze }: InteractionButtonsProps) => {
+    const router = useRouter()
+    const handleRedirect = () => {
+      router.push(`/report/asionesjia`)
+    }
     return (
       <div className="w-full p-4 md:p-10">
         <BlurInEffect index={3}>
@@ -71,7 +76,7 @@ const InteractionButtons = memo(
             label={isAnalyzed ? 'Go Now!' : 'Start Analysis'}
             iconLeft={ChartNoAxesCombined}
             iconRight={isAnalyzed ? ArrowRight : Play}
-            onClick={isAnalyzed ? () => console.log('Go Now!') : handleAnalyze}
+            onClick={isAnalyzed ? handleRedirect : handleAnalyze}
             isLoading={loading}
             loadingText="Analyzing..."
           />

@@ -1,3 +1,7 @@
+export type GithubDetails = {
+  user: GitHubUser
+} & Viewer
+
 export type Viewer = {
   viewer: {
     login: string
@@ -61,6 +65,11 @@ export type ProjectsV2 = {
     projectsV2: ProjectV2Connection
   }
 }
+export type RepositoryDiscussionComments = {
+  user: {
+    repositoryDiscussionComments: repositoryDiscussionCommentConnection
+  }
+}
 
 export interface UserCommitsInRepoQuery {
   user: {
@@ -68,7 +77,10 @@ export interface UserCommitsInRepoQuery {
     contributionsCollection: {
       commitContributionsByRepository: {
         repository: {
+          owner: { login: string }
           name: string
+          url: string
+          nameWithOwner: string
           isPrivate: boolean
         }
         contributions: {
@@ -133,6 +145,8 @@ export type GitHubUser = {
   // 用户的公开仓库信息
   repositories: RepositoryConnection
 
+  topRepositories: RepositoryConnection
+
   // 用户 star 的仓库信息
   starredRepositories: StarredRepositoryConnection
 
@@ -155,6 +169,10 @@ export type GitHubUser = {
   projectsV2: ProjectV2Connection
 
   gists: GistConnection
+
+  repositoryDiscussionComments: repositoryDiscussionCommentConnection
+
+  repositoryContributionConnection: RepositoryContributionConnection[]
 }
 
 // 贡献统计结构
@@ -165,7 +183,10 @@ export type ContributionsCollection = {
   totalRepositoryContributions: number // 总仓库贡献数
   commitContributionsByRepository: {
     repository: {
-      name: string // 仓库名称
+      owner: { login: string }
+      name: string
+      url: string
+      nameWithOwner: string
       isPrivate: boolean
     }
   }[]
@@ -198,9 +219,14 @@ export type RepositoryConnection = {
 
 // 仓库信息结构
 export type Repository = {
+  owner: {
+    login: string
+  }
   name: string // 仓库名称
+  nameWithOwner: string
   description: string | null // 仓库描述
   isPrivate: boolean // 是否为私有仓库
+  isFork: boolean // 是否为Fork仓库
   stargazerCount: number // star 数
   forkCount: number // fork 数
   primaryLanguage: { name: string } | null // 主要语言
@@ -221,13 +247,13 @@ export type Repository = {
   issues: { totalCount: number } // 仓库中的 Issue 总数
   openIssues: { totalCount: number } // 仓库中的 Issue 总数
   closedIssues: { totalCount: number } // 仓库中的 Issue 总数
-  projectsV2: {
-    nodes: {
-      title: string // 项目标题
-      closed: boolean // 项目是否已关闭
-      items: { totalCount: number } // 项目中的项目项总数
-    }[]
-  }
+  repositoryContributions?: RepositoryContributionConnection[]
+  commitCountsByMonth?: {
+    totalCount: number | null | undefined
+    since: Date | null | undefined
+    until: Date | null | undefined
+  }[]
+  weight?: number
 }
 
 // Starred 仓库信息
@@ -246,7 +272,13 @@ export type PullRequestConnection = {
   nodes: {
     title: string // PR 标题
     state: 'OPEN' | 'CLOSED' | 'MERGED' // PR 状态
-    repository: { name: string } // PR 所属仓库
+    repository: {
+      owner: { login: string }
+      name: string
+      url: string
+      nameWithOwner: string
+      isPrivate: boolean
+    } // PR 所属仓库
   }[]
   totalCount: number // 总 PR 数
 }
@@ -256,7 +288,13 @@ export type IssueConnection = {
   nodes: {
     title: string // Issue 标题
     state: 'OPEN' | 'CLOSED' // Issue 状态
-    repository: { name: string } // Issue 所属仓库
+    repository: {
+      owner: { login: string }
+      name: string
+      url: string
+      nameWithOwner: string
+      isPrivate: boolean
+    } // Issue 所属仓库
   }[]
   totalCount: number // 总 Issue 数
 }
@@ -317,6 +355,56 @@ export type GistConnection = {
     }[]
   }[]
   totalCount: number
+}
+
+export type repositoryDiscussionCommentConnection = {
+  nodes: {
+    body: string
+    createdAt: string
+    discussion: {
+      title: string
+      url: string
+      repository: {
+        owner: { login: string }
+        name: string
+        url: string
+        nameWithOwner: string
+        isPrivate: boolean
+      }
+    }
+  }[]
+  totalCount: number
+}
+
+export type RepositoryContributionConnection = {
+  login: string
+  id: number
+  node_id: string
+  avatar_url: string
+  gravatar_id: string | null
+  url: string
+  html_url: string
+  followers_url: string
+  following_url: string
+  gists_url: string
+  starred_url: string
+  subscriptions_url: string
+  organizations_url: string
+  repos_url: string
+  events_url: string
+  received_events_url: string
+  type: string
+  site_admin: boolean
+  contributions: number
+  email: string
+  name: string
+  user_view_type: string
+}
+
+export type TopRepositories = {
+  user: {
+    topRepositories: RepositoryConnection
+  }
 }
 
 export type GithubError = {

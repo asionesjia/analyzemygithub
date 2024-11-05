@@ -45,9 +45,14 @@ export const QUERY_CONTRIBUTIONS = (from: any, to: any) => `
       totalPullRequestContributions  # 用户的总 Pull Request 次数
       totalIssueContributions  # 用户的总 Issue 提交次数
       totalRepositoryContributions  # 用户的总仓库贡献次数
-      commitContributionsByRepository(maxRepositories: 5) {
+      commitContributionsByRepository(maxRepositories: 10) {
         repository {
-          name  # 用户提交的最近 5 个仓库名称
+          owner {
+           login
+          }
+          name
+          nameWithOwner
+          url
           isPrivate
         }
       }
@@ -73,9 +78,14 @@ query paginate($username: String!, $cursor: String) {
     # 用户的公开仓库
     repositories(first: 10, after:$cursor, orderBy: {field: UPDATED_AT, direction: DESC}) {
       nodes {
+        owner {
+          login
+        }
         name  # 仓库名称
+        nameWithOwner
         description  # 仓库描述
         isPrivate  # 仓库是否为私有
+        isFork  # 是否为Fork仓库
         stargazerCount  # 仓库的 star 数量
         forkCount  # 仓库的 fork 数量
         primaryLanguage {
@@ -253,7 +263,13 @@ query paginate($username: String!, $cursor: String) {
         title  # PR 标题
         state  # PR 状态（OPEN、CLOSED、MERGED）
         repository {
-          name  # PR 所属的仓库名称
+          owner {
+           login
+          }
+          name
+          nameWithOwner
+          url
+          isPrivate
         }
       }
       totalCount  # 用户的总 PR 数
@@ -274,7 +290,13 @@ query paginate($username: String!, $cursor: String) {
         title  # Issue 标题
         state  # Issue 状态（OPEN 或 CLOSED）
         repository {
-          name  # Issue 所属的仓库名称
+          owner {
+           login
+          }
+          name
+          nameWithOwner
+          url
+          isPrivate
         }
       }
       totalCount  # 用户的总 Issue 数
@@ -448,6 +470,15 @@ query paginate($username: String!, $cursor: String) {
         discussion {
           title        # 关联讨论的标题，展示评论主题。
           url          # 讨论的链接，便于跳转到原帖。
+          repository {
+            owner {
+              login
+            }
+            name
+            nameWithOwner
+            url
+            isPrivate
+          }
         }
       }
       totalCount       # 讨论评论总数，用于衡量用户在社区中的互动。
@@ -485,15 +516,50 @@ query paginate($username: String!, $cursor: String) {
     # 用户的顶级仓库（依据星标数排序）
     topRepositories(first: 10, after: $cursor, orderBy: {field: STARGAZERS, direction: DESC}) {
       nodes {
-        name           # 仓库名，展示用户最受欢迎的仓库。
-        description    # 仓库描述，展示内容类型。
-        stargazerCount # 星标数，展示受欢迎程度。
-        forkCount      # Fork 数，衡量项目被复用情况。
-        primaryLanguage {
-          name         # 主要语言，展示用户的主要技术栈。
+        owner {
+          login
         }
-        createdAt      # 创建时间，展示用户的项目历史。
-        updatedAt      # 上次更新时间，显示项目更新频率。
+        name  # 仓库名称
+        nameWithOwner
+        description  # 仓库描述
+        isPrivate  # 仓库是否为私有
+        isFork  # 是否为Fork仓库
+        stargazerCount  # 仓库的 star 数量
+        forkCount  # 仓库的 fork 数量
+        primaryLanguage {
+          name  # 仓库的主要编程语言
+        }
+        languages(first: 100) {
+          edges {
+            node {
+              name
+            }
+            size
+          }
+        }
+        createdAt  # 仓库创建日期
+        updatedAt  # 仓库的最后更新时间
+        pullRequests(states: [OPEN, CLOSED, MERGED]) {
+          totalCount
+        }
+        openPullRequests: pullRequests(states: OPEN) {
+          totalCount
+        }
+        closedPullRequests: pullRequests(states: CLOSED) {
+          totalCount
+        }
+        MergedPullRequests: pullRequests(states: MERGED) {
+          totalCount
+        }
+        issues(states: [OPEN, CLOSED]){
+          totalCount
+        }
+        openIssues: issues(states: OPEN) {
+          totalCount
+        }
+        closedIssues: issues(states: CLOSED) {
+          totalCount
+        }
       }
       totalCount       # 用户的讨论总数，衡量用户在 GitHub 讨论社区的影响力。
       pageInfo {
@@ -535,6 +601,21 @@ query paginate($username: String!, $$repositoryName: String!, $cursor: String) {
               hasNextPage             # 是否有下一页
               endCursor               # 用于分页的游标
             }
+          }
+        }
+      }
+    }
+  }
+}`
+
+export const QUERY_REPOSITORY_COMMIT_COUNT = `
+query CommitCountInRange($owner: String!, $name: String!, $since: GitTimestamp!, $until: GitTimestamp!) {
+  repository(owner: $owner, name: $name) {
+    defaultBranchRef {
+      target {
+        ... on Commit {
+          history(since: $since, until: $until) {
+            totalCount
           }
         }
       }

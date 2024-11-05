@@ -1,6 +1,10 @@
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc'
 import { z } from 'zod'
-import { Contributions, GithubError } from '~/server/api/routers/github/types'
+import {
+  Contributions,
+  GithubError,
+  RepositoryContributionConnection,
+} from '~/server/api/routers/github/types'
 import {
   queryBaseProfile,
   queryContributions,
@@ -11,7 +15,11 @@ import {
   queryProjectsV2,
   queryPullRequests,
   queryRepositories,
+  queryRepositoryCommitCount,
+  queryRepositoryContributions,
+  queryRepositoryDiscussionComments,
   queryStarredRepositories,
+  queryTopRepositories,
   queryViewer,
 } from '~/server/api/routers/github/query'
 import { mergeContributions } from '~/server/api/routers/github/utils'
@@ -153,6 +161,32 @@ export const githubRouter = createTRPCRouter({
       }
       try {
         const { data, error } = await queryRepositories(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getTopRepositories: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryTopRepositories(
           ctx.session.user.githubAccessToken!,
           input.username,
         )
@@ -341,6 +375,87 @@ export const githubRouter = createTRPCRouter({
         return {
           data: data,
           error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getRepositoryDiscussionComments: protectedProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryRepositoryDiscussionComments(
+          ctx.session.user.githubAccessToken!,
+          input.username,
+        )
+        return {
+          data: data,
+          error: error,
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getRepositoryContributions: protectedProcedure
+    .input(z.object({ nameWithOwner: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryRepositoryContributions(
+          ctx.session.user.githubAccessToken!,
+          input.nameWithOwner,
+        )
+        return {
+          data: data ? (data as RepositoryContributionConnection[]) : null,
+          error: '',
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getRepositoryCommitCount: protectedProcedure
+    .input(z.object({ owner: z.string(), name: z.string(), since: z.date(), until: z.date() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryRepositoryCommitCount(
+          ctx.session.user.githubAccessToken!,
+          input.owner,
+          input.name,
+          input.since,
+          input.until,
+        )
+        return {
+          data: data ? (data as { totalCount: number }) : null,
+          error: '',
         }
       } catch (e) {
         console.log(e)
