@@ -4,7 +4,7 @@ import { streamResponse } from '~/actions/iterateStream'
 import { apiServer } from '~/trpc/server'
 import { GithubDetails, GitHubUser, Repository } from '~/server/api/routers/github/types'
 import { Metrics } from '~/types/metrics'
-import { calculateRepositoryWeight } from '~/lib/githubAnalysis/algorithms'
+import { analyzeContributionData, calculateRepositoryWeight } from '~/lib/githubAnalysis/algorithms'
 
 export const publicAnalyzeAction = streamResponse(async function* () {
   try {
@@ -37,10 +37,16 @@ export const publicAnalyzeAction = streamResponse(async function* () {
         username: login,
         from: new Date(baseProfileResult?.user.createdAt),
       })
+    const contributionData =
+      contributionsResult &&
+      analyzeContributionData(
+        contributionsResult.user.contributionsCollection.contributionCalendar.weeks,
+      )
     yield {
       index: 3,
       message: '获取Github Contributions成功。',
       data: contributionsResult,
+      contributionData: contributionData,
       error: contributionsError,
     }
 

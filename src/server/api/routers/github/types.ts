@@ -196,19 +196,23 @@ export type ContributionsCollection = {
 // 贡献日历信息
 export type ContributionCalendar = {
   totalContributions: number // 总贡献数
-  weeks: {
-    contributionDays: {
-      date: string // 每日贡献日期
-      contributionCount: number // 每日贡献数
-      contributionLevel:
-        | 'FIRST_QUARTILE'
-        | 'FOURTH_QUARTILE'
-        | 'NONE'
-        | 'SECOND_QUARTILE'
-        | 'THIRD_QUARTILE' // 贡献度等级
-      color: string // 每日贡献颜色（热度）
-    }[]
-  }[]
+  weeks: ContributionWeek[]
+}
+
+export type ContributionWeek = {
+  contributionDays: ContributionDay[]
+}
+
+export type ContributionDay = {
+  date: string // 每日贡献日期
+  contributionCount: number // 每日贡献数
+  contributionLevel:
+    | 'FIRST_QUARTILE'
+    | 'FOURTH_QUARTILE'
+    | 'NONE'
+    | 'SECOND_QUARTILE'
+    | 'THIRD_QUARTILE' // 贡献度等级
+  color: string // 每日贡献颜色（热度）
 }
 
 // 用户的公开仓库信息
