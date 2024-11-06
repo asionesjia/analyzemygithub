@@ -8,6 +8,7 @@ export function mergeContributions(oldData: Contributions, newData: Contribution
   // 返回合并后的对象
   return {
     viewer: {
+      id: oldData.viewer.id === newData.viewer.id ? oldData.viewer.id : newData.viewer.id,
       login:
         oldData.viewer.login === newData.viewer.login ? oldData.viewer.login : newData.viewer.login,
     },

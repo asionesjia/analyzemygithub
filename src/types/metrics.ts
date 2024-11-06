@@ -2,6 +2,17 @@ export type Metrics = {
   repositories: {
     [key: string]: RepositoryMetricsConnection
   }
+  contribution: {
+    contributionIndex: number
+    totalContributions: number
+    lastYearTotalContributions: number
+    monthlyAverageContributions: number
+    lastYearMonthlyAverageContributions: number
+    monthlyActiveDaysAverage: number
+    lastYearMonthlyActiveDaysAverage: number
+    lastYearPeriodicContributionIndex: number
+  }
+  activityScore: number
 }
 
 export type RepositoryMetricsConnection = {

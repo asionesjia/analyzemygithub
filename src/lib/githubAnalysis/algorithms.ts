@@ -1,8 +1,59 @@
-import {RepositoryMetricsConnection} from '~/types/metrics'
-import {Factors} from '~/config/analysis-factors'
-import {ContributionWeek} from '~/server/api/routers/github/types'
-import {differenceInMonths, getISOWeek} from '~/lib/githubAnalysis/utils'
+import { RepositoryMetricsConnection } from '~/types/metrics'
+import { Factors } from '~/config/analysis-metric-factors'
+import { ContributionWeek, Repository } from '~/server/api/routers/github/types'
+import { differenceInMonths, getISOWeek } from '~/lib/githubAnalysis/utils'
 
+type calculateActivityScoreProps = {
+  totalIssues: number
+  totalDiscussions: number
+  monthlyAverageContributions: number
+  lastYearMonthlyAverageContributions: number
+  monthlyActiveDaysAverage: number
+  lastYearMonthlyActiveDaysAverage: number
+  lastYearPeriodicContributionIndex: number
+}
+export const calculateActivityScore = ({
+  totalIssues,
+  totalDiscussions,
+  monthlyAverageContributions,
+  lastYearMonthlyAverageContributions,
+  monthlyActiveDaysAverage,
+  lastYearMonthlyActiveDaysAverage,
+  lastYearPeriodicContributionIndex,
+}: calculateActivityScoreProps) => {
+  const weightFactor = Factors.activityScore.weightFactor
+  const smoothingFactor = Factors.activityScore.smoothingFactor
+
+  let activityScore = 0
+
+  activityScore +=
+    (totalIssues / (totalIssues + smoothingFactor.totalIssues)) * weightFactor.totalIssues
+  activityScore +=
+    (totalDiscussions / (totalDiscussions + smoothingFactor.totalDiscussions)) *
+    weightFactor.totalDiscussions
+  activityScore +=
+    (monthlyAverageContributions /
+      (monthlyAverageContributions + smoothingFactor.monthlyAverageContributions)) *
+    weightFactor.monthlyAverageContributions
+  activityScore +=
+    (lastYearMonthlyAverageContributions /
+      (lastYearMonthlyAverageContributions + smoothingFactor.lastYearMonthlyAverageContributions)) *
+    weightFactor.lastYearMonthlyAverageContributions
+  activityScore +=
+    (monthlyActiveDaysAverage /
+      (monthlyActiveDaysAverage + smoothingFactor.monthlyActiveDaysAverage)) *
+    weightFactor.monthlyActiveDaysAverage
+  activityScore +=
+    (lastYearMonthlyActiveDaysAverage /
+      (lastYearMonthlyActiveDaysAverage + smoothingFactor.lastYearMonthlyActiveDaysAverage)) *
+    weightFactor.lastYearMonthlyActiveDaysAverage
+  activityScore +=
+    (lastYearPeriodicContributionIndex /
+      (lastYearPeriodicContributionIndex + smoothingFactor.lastYearPeriodicContributionIndex)) *
+    weightFactor.lastYearPeriodicContributionIndex
+
+  return activityScore
+}
 /**
  * 计算仓库权重分
  * @param metrics
@@ -163,4 +214,54 @@ export function analyzeContributionData(
     lastYearMonthlyActiveDaysAverage: lastYearMonths > 0 ? lastYearActiveDays / lastYearMonths : 0, // 计算近一年月均活跃天数
     lastYearPeriodicContributionIndex, // 返回过去一年周期贡献指数
   }
+}
+
+/**
+ * 计算月均提交数
+ * @param commitCountsByMonth
+ */
+export const calculateMonthlyAverageCommits = (
+  commitCountsByMonth?: {
+    totalCount: number | null | undefined
+    since: Date | null | undefined
+    until: Date | null | undefined
+  }[],
+): number | undefined => {
+  if (!commitCountsByMonth || commitCountsByMonth.length === 0) {
+    return undefined
+  }
+
+  let totalCommits = 0
+  let monthsWithData = 0
+
+  for (const entry of commitCountsByMonth) {
+    if (entry.totalCount != null) {
+      totalCommits += entry.totalCount
+      monthsWithData += 1
+    }
+  }
+
+  if (monthsWithData === 0) {
+    return undefined // 没有有效的提交数据
+  }
+
+  return totalCommits / monthsWithData
+}
+
+/**
+ * 依据仓库权重计算用户所有贡献仓库的贡献度
+ * @param login
+ * @param repositories
+ */
+export const calculateWeightedUserContribution = (login: string, repositories: Repository[]) => {
+  let contributionIndex = 0
+  for (const repository of repositories) {
+    const contributions =
+      repository.repositoryContributors?.find((item) => item.login === login)?.contributions ?? 0
+    const totalCommits =
+      repository?.totalCommits && repository.totalCommits !== 0 ? repository.totalCommits : 1
+    const weight = repository?.weight ?? 0
+    contributionIndex += (contributions / totalCommits) * weight
+  }
+  return contributionIndex
 }

@@ -19,4 +19,24 @@ export const Factors = {
       pullRequestsCount: 75, // PR数量占比
     },
   },
+  activityScore: {
+    weightFactor: {
+      totalIssues: 0.1,
+      totalDiscussions: 0.1,
+      monthlyAverageContributions: 0.1,
+      lastYearMonthlyAverageContributions: 0.2,
+      monthlyActiveDaysAverage: 0.1,
+      lastYearMonthlyActiveDaysAverage: 0.2,
+      lastYearPeriodicContributionIndex: 0.2,
+    },
+    smoothingFactor: {
+      totalIssues: 50,
+      totalDiscussions: 50,
+      monthlyAverageContributions: 10,
+      lastYearMonthlyAverageContributions: 20,
+      monthlyActiveDaysAverage: 10,
+      lastYearMonthlyActiveDaysAverage: 20,
+      lastYearPeriodicContributionIndex: 0,
+    },
+  },
 }

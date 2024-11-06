@@ -1,6 +1,7 @@
 export const QUERY_VIEWER = `
 query {
   viewer {
+    id
     login
   }
 }
@@ -9,9 +10,11 @@ query {
 export const QUERY_BASE_PROFILE = `
 query($username: String!) {
   viewer {
+    id     # 当前登陆用户的ID
     login  # 当前登录的用户的 GitHub 用户名
   }
   user(login: $username) {
+    id                       # 指定用户的ID
     login                    # 指定用户的 GitHub 用户名
     name                     # 指定用户的显示名称
     bio                      # 指定用户的个人简介
@@ -36,6 +39,7 @@ query($username: String!) {
 export const QUERY_CONTRIBUTIONS = (from: any, to: any) => `
   query($username: String!${from ? ', $from: DateTime!' : ''}${to ? ', $to: DateTime!' : ''}) {
   viewer {
+    id
     login  # 当前登录的用户的 GitHub 用户名
   }
   user(login: $username) {
@@ -48,12 +52,49 @@ export const QUERY_CONTRIBUTIONS = (from: any, to: any) => `
       commitContributionsByRepository(maxRepositories: 10) {
         repository {
           owner {
-           login
+            login
           }
-          name
+          name  # 仓库名称
           nameWithOwner
-          url
-          isPrivate
+          description  # 仓库描述
+          isPrivate  # 仓库是否为私有
+          isFork  # 是否为Fork仓库
+          stargazerCount  # 仓库的 star 数量
+          forkCount  # 仓库的 fork 数量
+          primaryLanguage {
+            name  # 仓库的主要编程语言
+          }
+          languages(first: 100) {
+            edges {
+              node {
+                name
+              }
+              size
+            }
+          }
+          createdAt  # 仓库创建日期
+          updatedAt  # 仓库的最后更新时间
+          pullRequests(states: [OPEN, CLOSED, MERGED]) {
+            totalCount
+          }
+          openPullRequests: pullRequests(states: OPEN) {
+            totalCount
+          }
+          closedPullRequests: pullRequests(states: CLOSED) {
+            totalCount
+          }
+          MergedPullRequests: pullRequests(states: MERGED) {
+            totalCount
+          }
+          issues(states: [OPEN, CLOSED]){
+            totalCount
+          }
+          openIssues: issues(states: OPEN) {
+            totalCount
+          }
+          closedIssues: issues(states: CLOSED) {
+            totalCount
+          }
         }
       }
       # 拓展贡献趋势数据
@@ -608,13 +649,42 @@ query paginate($username: String!, $$repositoryName: String!, $cursor: String) {
   }
 }`
 
-export const QUERY_REPOSITORY_COMMIT_COUNT = `
+export const QUERY_REPOSITORY_COMMIT_COUNT_BY_DATE_RANGE = `
 query CommitCountInRange($owner: String!, $name: String!, $since: GitTimestamp!, $until: GitTimestamp!) {
   repository(owner: $owner, name: $name) {
     defaultBranchRef {
       target {
         ... on Commit {
           history(since: $since, until: $until) {
+            totalCount
+          }
+        }
+      }
+    }
+  }
+}`
+
+export const QUERY_USER_COMMIT_COUNT_IN_REPOSITORY_BY_ID = `
+query($id: ID, $owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    # 获取指定用户的 commits 数量
+    object(expression: "HEAD") {
+      ... on Commit {
+        history(author: {id: $id}) {
+          totalCount
+        }
+      }
+    }
+  }
+}`
+
+export const QUERY_REPOSITORY_COMMIT_COUNT = `
+query CommitCountInRange($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    defaultBranchRef {
+      target {
+        ... on Commit {
+          history {
             totalCount
           }
         }

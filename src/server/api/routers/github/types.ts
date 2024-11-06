@@ -1,9 +1,12 @@
+import { RepositoryMetricsConnection } from '~/types/metrics'
+
 export type GithubDetails = {
   user: GitHubUser
 } & Viewer
 
 export type Viewer = {
   viewer: {
+    id: string
     login: string
   }
 }
@@ -121,6 +124,7 @@ export interface GistsQuery {
 
 // 用户的详细信息结构
 export type GitHubUser = {
+  id: string
   login: string
   name?: string | null
   bio?: string | null
@@ -143,9 +147,9 @@ export type GitHubUser = {
   contributionsCollection: ContributionsCollection
 
   // 用户的公开仓库信息
-  repositories: RepositoryConnection
+  repositories?: Repository[]
 
-  topRepositories: RepositoryConnection
+  topRepositories?: RepositoryConnection
 
   // 用户 star 的仓库信息
   starredRepositories: StarredRepositoryConnection
@@ -172,7 +176,7 @@ export type GitHubUser = {
 
   repositoryDiscussionComments: repositoryDiscussionCommentConnection
 
-  repositoryContributionConnection: RepositoryContributionConnection[]
+  repositoryContributors: RepositoryContributorConnection[]
 }
 
 // 贡献统计结构
@@ -182,13 +186,7 @@ export type ContributionsCollection = {
   totalIssueContributions: number // 总 Issue 数
   totalRepositoryContributions: number // 总仓库贡献数
   commitContributionsByRepository: {
-    repository: {
-      owner: { login: string }
-      name: string
-      url: string
-      nameWithOwner: string
-      isPrivate: boolean
-    }
+    repository: Repository
   }[]
   contributionCalendar: ContributionCalendar // 用户贡献日历
 }
@@ -251,12 +249,14 @@ export type Repository = {
   issues: { totalCount: number } // 仓库中的 Issue 总数
   openIssues: { totalCount: number } // 仓库中的 Issue 总数
   closedIssues: { totalCount: number } // 仓库中的 Issue 总数
-  repositoryContributions?: RepositoryContributionConnection[]
+  totalCommits?: number
+  repositoryContributors?: RepositoryContributorConnection[]
   commitCountsByMonth?: {
     totalCount: number | null | undefined
     since: Date | null | undefined
     until: Date | null | undefined
   }[]
+  metrics?: RepositoryMetricsConnection
   weight?: number
 }
 
@@ -380,7 +380,7 @@ export type repositoryDiscussionCommentConnection = {
   totalCount: number
 }
 
-export type RepositoryContributionConnection = {
+export type RepositoryContributorConnection = {
   login: string
   id: number
   node_id: string

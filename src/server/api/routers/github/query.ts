@@ -9,9 +9,11 @@ import {
   QUERY_PULL_REQUESTS,
   QUERY_REPOSITORIES,
   QUERY_REPOSITORY_COMMIT_COUNT,
+  QUERY_REPOSITORY_COMMIT_COUNT_BY_DATE_RANGE,
   QUERY_REPOSITORY_DISCUSSION_COMMENTS,
   QUERY_STARRED_REPOSITORIES,
   QUERY_TOP_REPOSITORIES,
+  QUERY_USER_COMMIT_COUNT_IN_REPOSITORY_BY_ID,
   QUERY_VIEWER,
 } from '~/server/api/routers/github/data'
 import {
@@ -365,7 +367,7 @@ export const queryRepositoryDiscussionComments = async (access_token: string, us
   }
 }
 
-export const queryRepositoryContributions = async (access_token: string, repoWithOwner: string) => {
+export const queryRepositoryContributors = async (access_token: string, repoWithOwner: string) => {
   try {
     const response = await fetch(`https://api.github.com/repos/${repoWithOwner}/contributors`, {
       method: 'GET',
@@ -387,8 +389,6 @@ export const queryRepositoryCommitCount = async (
   access_token: string,
   owner: string,
   name: string,
-  since: Date,
-  until: Date,
 ) => {
   try {
     const response = await fetch('https://api.github.com/graphql', {
@@ -402,6 +402,40 @@ export const queryRepositoryCommitCount = async (
         variables: {
           owner: owner,
           name: name,
+        }, // 如果有变量的话可以在这里传递
+      }),
+    })
+
+    const { data, errors } = await response.json()
+    return {
+      data: { totalCount: data?.repository?.defaultBranchRef?.target?.history?.totalCount || 0 },
+      error: errors as GithubError[],
+    }
+  } catch (e) {
+    console.log(e)
+    return { data: null, error: '未知错误' }
+  }
+}
+
+export const queryRepositoryCommitCountByDateRange = async (
+  access_token: string,
+  owner: string,
+  name: string,
+  since: Date,
+  until: Date,
+) => {
+  try {
+    const response = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `bearer ${access_token}`, // 如果需要授权
+      },
+      body: JSON.stringify({
+        query: QUERY_REPOSITORY_COMMIT_COUNT_BY_DATE_RANGE,
+        variables: {
+          owner: owner,
+          name: name,
           since: since.toISOString(),
           until: until.toISOString(),
         }, // 如果有变量的话可以在这里传递
@@ -411,6 +445,40 @@ export const queryRepositoryCommitCount = async (
     const { data, errors } = await response.json()
     return {
       data: { totalCount: data?.repository?.defaultBranchRef?.target?.history?.totalCount || 0 },
+      error: errors as GithubError[],
+    }
+  } catch (e) {
+    console.log(e)
+    return { data: null, error: '未知错误' }
+  }
+}
+
+export const queryUserCommitCountInRepositoryById = async (
+  access_token: string,
+  id: string,
+  owner: string,
+  name: string,
+) => {
+  try {
+    const response = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `bearer ${access_token}`, // 如果需要授权
+      },
+      body: JSON.stringify({
+        query: QUERY_USER_COMMIT_COUNT_IN_REPOSITORY_BY_ID,
+        variables: {
+          id: id,
+          owner: owner,
+          name: name,
+        }, // 如果有变量的话可以在这里传递
+      }),
+    })
+
+    const { data, errors } = await response.json()
+    return {
+      data: { totalCount: data?.repository?.object?.history?.totalCount || 0 },
       error: errors as GithubError[],
     }
   } catch (e) {

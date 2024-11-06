@@ -3,7 +3,7 @@ import { z } from 'zod'
 import {
   Contributions,
   GithubError,
-  RepositoryContributionConnection,
+  RepositoryContributorConnection,
 } from '~/server/api/routers/github/types'
 import {
   queryBaseProfile,
@@ -16,10 +16,12 @@ import {
   queryPullRequests,
   queryRepositories,
   queryRepositoryCommitCount,
-  queryRepositoryContributions,
+  queryRepositoryCommitCountByDateRange,
+  queryRepositoryContributors,
   queryRepositoryDiscussionComments,
   queryStarredRepositories,
   queryTopRepositories,
+  queryUserCommitCountInRepositoryById,
   queryViewer,
 } from '~/server/api/routers/github/query'
 import { mergeContributions } from '~/server/api/routers/github/utils'
@@ -81,6 +83,7 @@ export const githubRouter = createTRPCRouter({
         const username: string = input.username
         let resultData: Contributions = {
           viewer: {
+            id: '',
             login: '',
           },
           user: {
@@ -410,7 +413,7 @@ export const githubRouter = createTRPCRouter({
         }
       }
     }),
-  getRepositoryContributions: protectedProcedure
+  getRepositoryContributors: protectedProcedure
     .input(z.object({ nameWithOwner: z.string() }))
     .query(async ({ ctx, input }) => {
       if (!ctx.session.user.githubAccessToken) {
@@ -420,12 +423,12 @@ export const githubRouter = createTRPCRouter({
         }
       }
       try {
-        const { data, error } = await queryRepositoryContributions(
+        const { data, error } = await queryRepositoryContributors(
           ctx.session.user.githubAccessToken!,
           input.nameWithOwner,
         )
         return {
-          data: data ? (data as RepositoryContributionConnection[]) : null,
+          data: data ? (data as RepositoryContributorConnection[]) : null,
           error: '',
         }
       } catch (e) {
@@ -437,7 +440,7 @@ export const githubRouter = createTRPCRouter({
       }
     }),
   getRepositoryCommitCount: protectedProcedure
-    .input(z.object({ owner: z.string(), name: z.string(), since: z.date(), until: z.date() }))
+    .input(z.object({ owner: z.string(), name: z.string() }))
     .query(async ({ ctx, input }) => {
       if (!ctx.session.user.githubAccessToken) {
         return {
@@ -450,8 +453,63 @@ export const githubRouter = createTRPCRouter({
           ctx.session.user.githubAccessToken!,
           input.owner,
           input.name,
+        )
+        return {
+          data: data ? (data as { totalCount: number }) : null,
+          error: '',
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getRepositoryCommitCountByDateRange: protectedProcedure
+    .input(z.object({ owner: z.string(), name: z.string(), since: z.date(), until: z.date() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryRepositoryCommitCountByDateRange(
+          ctx.session.user.githubAccessToken!,
+          input.owner,
+          input.name,
           input.since,
           input.until,
+        )
+        return {
+          data: data ? (data as { totalCount: number }) : null,
+          error: '',
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getUserCommitCountInRepositoryById: protectedProcedure
+    .input(z.object({ id: z.string(), owner: z.string(), name: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryUserCommitCountInRepositoryById(
+          ctx.session.user.githubAccessToken!,
+          input.id,
+          input.owner,
+          input.name,
         )
         return {
           data: data ? (data as { totalCount: number }) : null,

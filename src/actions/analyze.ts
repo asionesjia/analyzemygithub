@@ -3,15 +3,24 @@
 import { streamResponse } from '~/actions/iterateStream'
 import { apiServer } from '~/trpc/server'
 import { GithubDetails, GitHubUser, Repository } from '~/server/api/routers/github/types'
+import {
+  analyzeContributionData,
+  calculateActivityScore,
+  calculateMonthlyAverageCommits,
+  calculateRepositoryWeight,
+  calculateWeightedUserContribution,
+} from '~/lib/githubAnalysis/algorithms'
 import { Metrics } from '~/types/metrics'
-import { analyzeContributionData, calculateRepositoryWeight } from '~/lib/githubAnalysis/algorithms'
+import { uniqueCommitContributionsByRepository } from '~/lib/githubAnalysis/utils'
 
 export const publicAnalyzeAction = streamResponse(async function* () {
   try {
     const { data: viewerResult, error: viewerError } = await apiServer.github.getViewer()
     // const login = viewerResult?.viewer.login
+    // const id = viewerResult?.viewer.id
     const login = 'dillionverma'
-    if (!login)
+    const id = 'MDQ6VXNlcjE2ODYwNTI4'
+    if (!login || !id)
       return { index: null, message: null, error: '与Github建立连接失败，请重新登陆尝试。' }
     yield { index: 1, message: '确认GitHub连接正常。', data: viewerResult, error: viewerError }
 
@@ -37,51 +46,45 @@ export const publicAnalyzeAction = streamResponse(async function* () {
         username: login,
         from: new Date(baseProfileResult?.user.createdAt),
       })
-    const contributionData =
-      contributionsResult &&
-      analyzeContributionData(
-        contributionsResult.user.contributionsCollection.contributionCalendar.weeks,
-      )
     yield {
       index: 3,
       message: '获取Github Contributions成功。',
       data: contributionsResult,
-      contributionData: contributionData,
       error: contributionsError,
     }
 
-    const { data: repositoriesResult, error: repositoriesError } =
-      await apiServer.github.getRepositories({ username: login })
-    yield {
-      index: 4,
-      message: '获取Github Repositories成功。',
-      data: repositoriesResult,
-      error: repositoriesError,
-    }
+    // const { data: repositoriesResult, error: repositoriesError } =
+    //   await apiServer.github.getRepositories({ username: login })
+    // yield {
+    //   index: 4,
+    //   message: '获取Github Repositories成功。',
+    //   data: repositoriesResult,
+    //   error: repositoriesError,
+    // }
 
-    const { data: topRepositoriesResult, error: topRepositoriesError } =
-      await apiServer.github.getTopRepositories({ username: login })
-    if (topRepositoriesResult) {
-      topRepositoriesResult.user.topRepositories.nodes = await Promise.all(
-        topRepositoriesResult?.user.topRepositories.nodes.map(async (node) => {
-          const { data: repositoryContributionsResult } =
-            await apiServer.github.getRepositoryContributions({ nameWithOwner: node.nameWithOwner })
-          const commitCountsByMonth = await getRepositoryCommitCountsByMonth(node)
-
-          return {
-            ...node,
-            repositoryContributions: repositoryContributionsResult || [], // 返回空数组而不是 null
-            commitCountsByMonth: commitCountsByMonth,
-          }
-        }) || [], // 处理可能为 undefined 的情况
-      )
-    }
-    yield {
-      index: 4,
-      message: '获取Github Top Repositories成功。',
-      data: topRepositoriesResult,
-      error: topRepositoriesError,
-    }
+    // const { data: topRepositoriesResult, error: topRepositoriesError } =
+    //   await apiServer.github.getTopRepositories({ username: login })
+    // if (topRepositoriesResult) {
+    //   topRepositoriesResult.user.topRepositories.nodes = await Promise.all(
+    //     topRepositoriesResult?.user.topRepositories.nodes.map(async (node) => {
+    //       const { data: repositoryContributorsResult } =
+    //         await apiServer.github.getRepositoryContributors({ nameWithOwner: node.nameWithOwner })
+    //       const commitCountsByMonth = await getRepositoryCommitCountsByMonth(node)
+    //
+    //       return {
+    //         ...node,
+    //         repositoryContributors: repositoryContributorsResult || [], // 返回空数组而不是 null
+    //         commitCountsByMonth: commitCountsByMonth,
+    //       }
+    //     }) || [], // 处理可能为 undefined 的情况
+    //   )
+    // }
+    // yield {
+    //   index: 4,
+    //   message: '获取Github Top Repositories成功。',
+    //   data: topRepositoriesResult,
+    //   error: topRepositoriesError,
+    // }
 
     const { data: starredRepositoriesResult, error: starredRepositoriesError } =
       await apiServer.github.getStarredRepositories({ username: login })
@@ -155,13 +158,17 @@ export const publicAnalyzeAction = streamResponse(async function* () {
 
     const originData: GithubDetails = {
       viewer: {
+        id: id,
         login: login,
       },
       user: {
         ...baseProfileResult.user,
         ...contributionsResult?.user,
-        ...topRepositoriesResult?.user,
-        ...repositoriesResult?.user,
+        repositories: contributionsResult
+          ? uniqueCommitContributionsByRepository(
+              contributionsResult?.user.contributionsCollection.commitContributionsByRepository,
+            ).map((item) => item.repository)
+          : undefined,
         ...starredRepositoriesResult?.user,
         ...pullRequestsResult?.user,
         ...issuesResult?.user,
@@ -178,7 +185,7 @@ export const publicAnalyzeAction = streamResponse(async function* () {
       error: null,
     }
 
-    const metrics = handleOriginGithubData(originData.user)
+    const metrics = await handleOriginGithubData(originData.user)
     yield { index: 12, message: '数据分析成功。', metrics }
   } catch (e) {
     console.error(e)
@@ -186,61 +193,133 @@ export const publicAnalyzeAction = streamResponse(async function* () {
   }
 })
 
-const handleOriginGithubData = (data: GitHubUser) => {
-  const { topRepositories } = data
+const handleOriginGithubData = async (data: GitHubUser) => {
+  const { login, repositories, contributionsCollection } = data
   const metrics: Metrics = {
     repositories: {},
+    contribution: {
+      contributionIndex: 0,
+      lastYearPeriodicContributionIndex: 0,
+      monthlyAverageContributions: 0,
+      monthlyActiveDaysAverage: 0,
+      lastYearMonthlyActiveDaysAverage: 0,
+      lastYearMonthlyAverageContributions: 0,
+      lastYearTotalContributions: 0,
+      totalContributions: 0,
+    },
+    activityScore: 0,
   }
-  for (const node of topRepositories.nodes) {
-    const nameWithOwner = node.nameWithOwner
-    const monthlyAverageCommits = calculateMonthlyAverageCommits(node.commitCountsByMonth)
-    const issueCount = Number(node.issues.totalCount)
-    const closedIssueCount = node.closedIssues.totalCount
-    const issueCloseRate = issueCount > 0 ? closedIssueCount / issueCount : 0
-    const metricsResult = {
-      monthlyAverageCommits: monthlyAverageCommits,
-      issueCloseRate: issueCloseRate,
-      contributorsCount: node.repositoryContributions?.length,
-      issuesCount: issueCount,
-      starsCount: node.stargazerCount,
-      forksCount: node.forkCount,
-      pullRequestsCount: node.pullRequests.totalCount,
-      weight: undefined,
-    }
-    const weight = calculateRepositoryWeight(metricsResult)
-    metrics.repositories[nameWithOwner] = {
-      ...metricsResult,
-      weight: node.isFork ? 0 : weight,
-    }
+
+  const repositoriesResult: Repository[] = await Promise.all(
+    repositories?.map(async (repository) => {
+      // 获取仓库提交总数
+      const { data: repositoryCommitCountResult } = await apiServer.github.getRepositoryCommitCount(
+        {
+          owner: repository.owner.login,
+          name: repository.name,
+        },
+      )
+      // 获取仓库贡献者
+      const { data: repositoryContributorsResult } =
+        await apiServer.github.getRepositoryContributors({
+          nameWithOwner: repository.nameWithOwner,
+        })
+      // 获取仓库过去一年每个月的提交总数
+      const commitCountsByMonth = await getRepositoryCommitCountsByMonth(repository)
+
+      const monthlyAverageCommits = calculateMonthlyAverageCommits(commitCountsByMonth)
+      const issueCount = Number(repository.issues.totalCount)
+      const closedIssueCount = repository.closedIssues.totalCount
+      const issueCloseRate = issueCount > 0 ? closedIssueCount / issueCount : 0
+      const resultMetricsResult = {
+        monthlyAverageCommits: monthlyAverageCommits,
+        issueCloseRate: issueCloseRate,
+        contributorsCount: repository.repositoryContributors?.length,
+        issuesCount: issueCount,
+        starsCount: repository.stargazerCount,
+        forksCount: repository.forkCount,
+        pullRequestsCount: repository.pullRequests.totalCount,
+        weight: undefined,
+      }
+      const weight = calculateRepositoryWeight(resultMetricsResult)
+
+      metrics.repositories[repository.nameWithOwner] = {
+        ...resultMetricsResult,
+        weight,
+      }
+
+      return {
+        ...repository,
+        totalCommits: repositoryCommitCountResult?.totalCount,
+        repositoryContributors: repositoryContributorsResult || [], // 返回空数组而不是 null
+        commitCountsByMonth: commitCountsByMonth,
+        metrics: {
+          ...resultMetricsResult,
+          weight,
+        },
+        weight,
+      }
+    }) || [], // 处理可能为 undefined 的情况
+  )
+
+  const contributionMetrics = analyzeContributionData(
+    contributionsCollection.contributionCalendar.weeks,
+  )
+
+  metrics.contribution = {
+    contributionIndex: repositoriesResult
+      ? calculateWeightedUserContribution(login, repositoriesResult)
+      : 0,
+    ...contributionMetrics,
   }
-  return metrics
+
+  metrics.activityScore = calculateActivityScore({
+    totalIssues: data.issues.totalCount,
+    totalDiscussions: data.repositoryDiscussionComments.totalCount,
+    ...contributionMetrics,
+  })
+
+  return {
+    repositories: repositoriesResult,
+    metrics: metrics,
+  }
 }
 
-export const getRepositoryCommitCountsByMonth = async (repository: Repository) => {
+const getRepositoryCommitCountsByMonth = async (repository: Repository) => {
   const { owner, name, createdAt } = repository
-  const startDate = new Date(createdAt)
+  const createdAtDate = new Date(createdAt)
   const nowDate = new Date()
+  const oneYearAgo = new Date(nowDate)
+  oneYearAgo.setFullYear(nowDate.getFullYear() - 1)
 
-  let since = new Date(startDate)
+  let since = new Date(createdAtDate > oneYearAgo ? createdAtDate : oneYearAgo)
   let until = new Date(since)
-  until.setMonth(until.getMonth() + 1)
+  until.setMonth(since.getMonth() + 1)
 
   const promiseArray = []
 
   // 创建一个包含每个月查询请求的数组
   while (until <= nowDate) {
+    const start = new Date(since) // 避免传引用
+    const end = new Date(until)
+
     promiseArray.push(
       apiServer.github
-        .getRepositoryCommitCount({
+        .getRepositoryCommitCountByDateRange({
           owner: owner.login,
           name: name,
-          since: new Date(since),
-          until: new Date(until),
+          since: start,
+          until: end,
         })
         .then((response) => ({
           totalCount: response.data?.totalCount,
-          since: new Date(since),
-          until: new Date(until),
+          since: start,
+          until: end,
+        }))
+        .catch(() => ({
+          totalCount: null,
+          since: start,
+          until: end,
         })),
     )
 
@@ -251,18 +330,26 @@ export const getRepositoryCommitCountsByMonth = async (repository: Repository) =
 
   // 添加最后的时间段（如果不满月）
   if (since < nowDate) {
+    const start = new Date(since)
+    const end = new Date(nowDate)
+
     promiseArray.push(
       apiServer.github
-        .getRepositoryCommitCount({
+        .getRepositoryCommitCountByDateRange({
           owner: owner.login,
           name: name,
-          since: new Date(since),
-          until: new Date(nowDate),
+          since: start,
+          until: end,
         })
         .then((response) => ({
           totalCount: response.data?.totalCount,
-          since: new Date(since),
-          until: new Date(nowDate),
+          since: start,
+          until: end,
+        }))
+        .catch(() => ({
+          totalCount: null,
+          since: start,
+          until: end,
         })),
     )
   }
@@ -274,31 +361,4 @@ export const getRepositoryCommitCountsByMonth = async (repository: Repository) =
   return settledResults.map((result) =>
     result.status === 'fulfilled' ? result.value : { totalCount: null, since: null, until: null },
   )
-}
-const calculateMonthlyAverageCommits = (
-  commitCountsByMonth?: {
-    totalCount: number | null | undefined
-    since: Date | null | undefined
-    until: Date | null | undefined
-  }[],
-): number | undefined => {
-  if (!commitCountsByMonth || commitCountsByMonth.length === 0) {
-    return undefined
-  }
-
-  let totalCommits = 0
-  let monthsWithData = 0
-
-  for (const entry of commitCountsByMonth) {
-    if (entry.totalCount != null) {
-      totalCommits += entry.totalCount
-      monthsWithData += 1
-    }
-  }
-
-  if (monthsWithData === 0) {
-    return undefined // 没有有效的提交数据
-  }
-
-  return totalCommits / monthsWithData
 }
