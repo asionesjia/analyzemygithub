@@ -17,6 +17,7 @@ export const envServer = createEnv({
     ),
     AUTH_GITHUB_ID: z.string(),
     AUTH_GITHUB_SECRET: z.string(),
+    OPENAI_API_KEY: z.string(),
   },
   experimental__runtimeEnv: process.env,
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

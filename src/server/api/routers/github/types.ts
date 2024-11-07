@@ -276,6 +276,7 @@ export type PullRequestConnection = {
   nodes: {
     title: string // PR 标题
     state: 'OPEN' | 'CLOSED' | 'MERGED' // PR 状态
+    author: { login: string }
     repository: {
       owner: { login: string }
       name: string
@@ -283,6 +284,7 @@ export type PullRequestConnection = {
       nameWithOwner: string
       isPrivate: boolean
     } // PR 所属仓库
+    createdAt: string
   }[]
   totalCount: number // 总 PR 数
 }
@@ -292,6 +294,7 @@ export type IssueConnection = {
   nodes: {
     title: string // Issue 标题
     state: 'OPEN' | 'CLOSED' // Issue 状态
+    author: { login: string }
     repository: {
       owner: { login: string }
       name: string
@@ -299,6 +302,7 @@ export type IssueConnection = {
       nameWithOwner: string
       isPrivate: boolean
     } // Issue 所属仓库
+    createdAt: string
   }[]
   totalCount: number // 总 Issue 数
 }
@@ -365,6 +369,7 @@ export type repositoryDiscussionCommentConnection = {
   nodes: {
     body: string
     createdAt: string
+    author: { login: string }
     discussion: {
       title: string
       url: string

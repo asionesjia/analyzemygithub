@@ -19,6 +19,7 @@ import {
   queryRepositoryCommitCountByDateRange,
   queryRepositoryContributors,
   queryRepositoryDiscussionComments,
+  queryRepositoryReadme,
   queryStarredRepositories,
   queryTopRepositories,
   queryUserCommitCountInRepositoryById,
@@ -513,6 +514,33 @@ export const githubRouter = createTRPCRouter({
         )
         return {
           data: data ? (data as { totalCount: number }) : null,
+          error: '',
+        }
+      } catch (e) {
+        console.log(e)
+        return {
+          data: null,
+          error: '查询失败',
+        }
+      }
+    }),
+  getRepositoryReadme: protectedProcedure
+    .input(z.object({ owner: z.string(), name: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.session.user.githubAccessToken) {
+        return {
+          data: null,
+          error: '用户未登陆。',
+        }
+      }
+      try {
+        const { data, error } = await queryRepositoryReadme(
+          ctx.session.user.githubAccessToken!,
+          input.owner,
+          input.name,
+        )
+        return {
+          data: data ? (data as { text: string }) : null,
           error: '',
         }
       } catch (e) {

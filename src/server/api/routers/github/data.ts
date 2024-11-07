@@ -312,6 +312,10 @@ query paginate($username: String!, $cursor: String) {
           url
           isPrivate
         }
+        author {
+          login
+        }
+        createdAt
       }
       totalCount  # 用户的总 PR 数
       pageInfo {
@@ -339,6 +343,10 @@ query paginate($username: String!, $cursor: String) {
           url
           isPrivate
         }
+        author {
+          login
+        }
+        createdAt
       }
       totalCount  # 用户的总 Issue 数
       pageInfo {
@@ -510,7 +518,10 @@ query paginate($username: String!, $cursor: String) {
         createdAt      # 创建时间，标记用户活跃期。
         discussion {
           title        # 关联讨论的标题，展示评论主题。
-          url          # 讨论的链接，便于跳转到原帖。
+          url          # 讨论的链接，便于跳转到原帖。        
+          author {
+            login
+          }
           repository {
             owner {
               login
@@ -688,6 +699,17 @@ query CommitCountInRange($owner: String!, $name: String!) {
             totalCount
           }
         }
+      }
+    }
+  }
+}`
+
+export const QUERY_REPOSITORY_README = `
+query getRepositoryReadme($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    object(expression: "HEAD:README.md") {
+      ... on Blob {
+        text
       }
     }
   }
