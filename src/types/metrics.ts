@@ -13,6 +13,10 @@ export type Metrics = {
     lastYearPeriodicContributionIndex: number
   }
   activityScore: number
+  contributionScore: number
+  technicalScore: number
+  communityImpactScore: number
+  communityActivityScore: number
 }
 
 export type RepositoryMetricsConnection = {

@@ -28,3 +28,23 @@ export const uniqueCommitContributionsByRepository = (
   })
   return Array.from(uniqueMap.values()).map((repo) => ({ repository: repo }))
 }
+
+/**
+ * 对language technical stack去重
+ * @param array
+ */
+export function mergeAndDeduplicateByName(array: { name: string; size: number }[]) {
+  const result = array.reduce<Record<string, { name: string; size: number }>>((acc, current) => {
+    // 如果 `acc` 中已经存在同名项，则累加其 `size`
+    if (acc[current.name]) {
+      acc[current.name]!.size += current.size
+    } else {
+      // 如果 `acc` 中没有此 `name`，则添加新项
+      acc[current.name] = { ...current }
+    }
+    return acc
+  }, {})
+
+  // 将去重后的对象值转换为数组返回
+  return Object.values(result)
+}

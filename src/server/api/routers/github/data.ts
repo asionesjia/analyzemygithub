@@ -83,7 +83,7 @@ export const QUERY_CONTRIBUTIONS = (from: any, to: any) => `
           closedPullRequests: pullRequests(states: CLOSED) {
             totalCount
           }
-          MergedPullRequests: pullRequests(states: MERGED) {
+          mergedPullRequests: pullRequests(states: MERGED) {
             totalCount
           }
           issues(states: [OPEN, CLOSED]){
@@ -151,7 +151,7 @@ query paginate($username: String!, $cursor: String) {
         closedPullRequests: pullRequests(states: CLOSED) {
           totalCount
         }
-        MergedPullRequests: pullRequests(states: MERGED) {
+        mergedPullRequests: pullRequests(states: MERGED) {
           totalCount
         }
         issues(states: [OPEN, CLOSED]){
@@ -589,7 +589,7 @@ query paginate($username: String!, $cursor: String) {
         closedPullRequests: pullRequests(states: CLOSED) {
           totalCount
         }
-        MergedPullRequests: pullRequests(states: MERGED) {
+        mergedPullRequests: pullRequests(states: MERGED) {
           totalCount
         }
         issues(states: [OPEN, CLOSED]){

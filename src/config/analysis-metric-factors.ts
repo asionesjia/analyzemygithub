@@ -32,11 +32,67 @@ export const Factors = {
     smoothingFactor: {
       totalIssues: 50,
       totalDiscussions: 50,
-      monthlyAverageContributions: 10,
-      lastYearMonthlyAverageContributions: 20,
+      monthlyAverageContributions: 20,
+      lastYearMonthlyAverageContributions: 40,
       monthlyActiveDaysAverage: 10,
       lastYearMonthlyActiveDaysAverage: 20,
       lastYearPeriodicContributionIndex: 0,
+    },
+  },
+  contributionScore: {
+    weightFactor: {
+      totalContributions: 0.1,
+      totalIssues: 0.1,
+      totalDiscussions: 0.1,
+      totalPullRequests: 0.3,
+      contributionIndex: 0.4,
+    },
+    smoothingFactor: {
+      totalContributions: 1000,
+      totalIssues: 50,
+      totalDiscussions: 50,
+      totalPullRequests: 100,
+      contributionIndex: 2,
+    },
+  },
+  technicalScore: {
+    weightFactor: {
+      contributionIndex: 0.2,
+      technologyStackIndex: 0.2,
+      technicalBreadth: 0.2,
+      technicalDepth: 0.2,
+      seniority: 0.2,
+    },
+    smoothingFactor: {
+      contributionIndex: 2,
+      technologyStackIndex: 100000,
+      technicalBreadth: 5,
+      technicalDepth: undefined,
+      seniority: undefined,
+    },
+  },
+  communityImpactScore: {
+    weightFactor: {
+      stars: 0.5,
+      followers: 0.5,
+    },
+    smoothingFactor: {
+      stars: 500,
+      followers: 100,
+    },
+  },
+  communityActivityScore: {
+    weightFactor: {
+      issues: 0.25,
+      discussions: 0.25,
+      stared: 0.25,
+      following: 0.25,
+    },
+    smoothingFactor: {
+      issues: 100,
+      discussions: 100,
+      stared: 500,
+      following: 100,
     },
   },
 }

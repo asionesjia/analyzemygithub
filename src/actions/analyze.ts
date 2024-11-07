@@ -4,11 +4,19 @@ import { streamResponse } from '~/actions/iterateStream'
 import { apiServer } from '~/trpc/server'
 import { GithubDetails, GitHubUser, Repository } from '~/server/api/routers/github/types'
 import {
-  analyzeContributionData,
   calculateActivityScore,
+  calculateCommunityActivityScore,
+  calculateCommunityImpactScore,
+  calculateContributionIndex,
+  calculateContributionsByContributionCalendar,
+  calculateContributionScore,
   calculateMonthlyAverageCommits,
   calculateRepositoryWeight,
-  calculateWeightedUserContribution,
+  calculateTechnicalDepth,
+  calculateTechnicalScore,
+  calculateTechnologyStackIndex,
+  calculateTimeDecay,
+  calculateUserWeightedStars,
 } from '~/lib/githubAnalysis/algorithms'
 import { Metrics } from '~/types/metrics'
 import { uniqueCommitContributionsByRepository } from '~/lib/githubAnalysis/utils'
@@ -194,7 +202,7 @@ export const publicAnalyzeAction = streamResponse(async function* () {
 })
 
 const handleOriginGithubData = async (data: GitHubUser) => {
-  const { login, repositories, contributionsCollection } = data
+  const { login, repositories, contributionsCollection, createdAt } = data
   const metrics: Metrics = {
     repositories: {},
     contribution: {
@@ -208,6 +216,10 @@ const handleOriginGithubData = async (data: GitHubUser) => {
       totalContributions: 0,
     },
     activityScore: 0,
+    contributionScore: 0,
+    technicalScore: 0,
+    communityImpactScore: 0,
+    communityActivityScore: 0,
   }
 
   const repositoriesResult: Repository[] = await Promise.all(
@@ -262,13 +274,19 @@ const handleOriginGithubData = async (data: GitHubUser) => {
     }) || [], // 处理可能为 undefined 的情况
   )
 
-  const contributionMetrics = analyzeContributionData(
+  const contributionMetrics = calculateContributionsByContributionCalendar(
     contributionsCollection.contributionCalendar.weeks,
   )
+  const { technologyStackIndex, technologyStack } = calculateTechnologyStackIndex(
+    login,
+    repositoriesResult,
+  )
+  const technicalDepth = calculateTechnicalDepth(technologyStack)
+  const seniority = calculateTimeDecay(new Date(createdAt))
 
   metrics.contribution = {
     contributionIndex: repositoriesResult
-      ? calculateWeightedUserContribution(login, repositoriesResult)
+      ? calculateContributionIndex(login, repositoriesResult)
       : 0,
     ...contributionMetrics,
   }
@@ -277,6 +295,34 @@ const handleOriginGithubData = async (data: GitHubUser) => {
     totalIssues: data.issues.totalCount,
     totalDiscussions: data.repositoryDiscussionComments.totalCount,
     ...contributionMetrics,
+  })
+
+  metrics.contributionScore = calculateContributionScore({
+    totalIssues: data.issues.totalCount,
+    totalDiscussions: data.repositoryDiscussionComments.totalCount,
+    totalContributions: contributionMetrics.totalContributions,
+    totalPullRequests: data.pullRequests.totalCount,
+    contributionIndex: metrics.contribution.contributionIndex,
+  })
+
+  metrics.technicalScore = calculateTechnicalScore({
+    contributionIndex: metrics.contribution.contributionIndex,
+    technologyStackIndex: technologyStackIndex,
+    technologyStack: technologyStack,
+    technicalDepth: technicalDepth,
+    seniority: seniority,
+  })
+
+  metrics.communityImpactScore = calculateCommunityImpactScore({
+    stars: calculateUserWeightedStars(login, repositoriesResult),
+    followers: data.followers.totalCount ?? 0,
+  })
+
+  metrics.communityActivityScore = calculateCommunityActivityScore({
+    stared: data.starredRepositories.totalCount,
+    issues: data.issues.totalCount,
+    discussions: data.repositoryDiscussionComments.totalCount,
+    following: data.following.totalCount,
   })
 
   return {
