@@ -3,8 +3,9 @@ import { z } from 'zod'
 
 export const envServer = createEnv({
   server: {
-    DATABASE_URL: z.string().url(),
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    DATABASE_URL: z.string().url(),
+    MONGODB_URI: z.string(),
     AUTH_JWT_SECRET: z.string(),
     AUTH_JWT_EXPIRES_IN: z.string(),
     AUTH_SECRET: process.env.NODE_ENV === 'production' ? z.string() : z.string().optional(),

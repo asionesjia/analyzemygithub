@@ -7,6 +7,34 @@ import {
   mergeAndDeduplicateByName,
 } from '~/lib/githubAnalysis/utils'
 
+type calculateComprehensiveScore = {
+  activityScore: number
+  contributionScore: number
+  technicalScore: number
+  communityImpactScore: number
+  communityActivityScore: number
+}
+
+export const calculateComprehensiveScore = ({
+  activityScore,
+  contributionScore,
+  technicalScore,
+  communityImpactScore,
+  communityActivityScore,
+}: calculateComprehensiveScore) => {
+  const weightFactor = Factors.comprehensiveScoreScore.weightFactor
+
+  let comprehensiveScore = 0
+
+  comprehensiveScore += activityScore * weightFactor.activityScore
+  comprehensiveScore += contributionScore * weightFactor.contributionScore
+  comprehensiveScore += technicalScore * weightFactor.technicalScore
+  comprehensiveScore += communityImpactScore * weightFactor.communityImpactScore
+  comprehensiveScore += communityActivityScore * weightFactor.communityActivityScore
+
+  return comprehensiveScore
+}
+
 type calculateActivityScoreProps = {
   totalIssues: number
   totalDiscussions: number

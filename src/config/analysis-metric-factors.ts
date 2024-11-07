@@ -95,4 +95,13 @@ export const Factors = {
       following: 100,
     },
   },
+  comprehensiveScoreScore: {
+    weightFactor: {
+      activityScore: 2,
+      contributionScore: 2,
+      technicalScore: 2,
+      communityImpactScore: 2,
+      communityActivityScore: 2,
+    },
+  },
 }

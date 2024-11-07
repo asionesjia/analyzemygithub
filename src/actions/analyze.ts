@@ -7,6 +7,7 @@ import {
   calculateActivityScore,
   calculateCommunityActivityScore,
   calculateCommunityImpactScore,
+  calculateComprehensiveScore,
   calculateContributionIndex,
   calculateContributionsByContributionCalendar,
   calculateContributionScore,
@@ -21,16 +22,18 @@ import {
 import { Metrics } from '~/types/metrics'
 import { uniqueCommitContributionsByRepository } from '~/lib/githubAnalysis/utils'
 import { inferNationAndSkills } from '~/lib/openai/analyzeGithub'
+import { insertAnalysis } from '~/server/mongodb/api'
 
-export const publicAnalyzeAction = streamResponse(async function* () {
+export const publicAnalyzeAction = streamResponse(async function* (username?: string) {
   try {
     // 查询当前登陆用户信息
     const { data: viewerResult, error: viewerError } = await apiServer.github.getViewer()
-    const login = viewerResult?.viewer.login
+    const login = username ? username : viewerResult?.viewer.login
+    console.log(login)
     const id = viewerResult?.viewer.id
     if (!login || !id)
       return { index: null, message: null, error: '与Github建立连接失败，请重新登陆尝试。' }
-    yield { index: 1, message: '确认GitHub连接正常。', error: viewerError }
+    yield { index: 1, message: '确认GitHub连接正常。', error: viewerError?.toString() }
 
     // 查询Github Profile
     const { data: baseProfileResult, error: baseProfileError } =
@@ -40,10 +43,10 @@ export const publicAnalyzeAction = streamResponse(async function* () {
     yield {
       index: 2,
       message: '获取Github Profile成功。',
-      error: baseProfileError,
+      error: baseProfileError?.toString(),
     }
 
-    if (!baseProfileResult?.user.createdAt)
+    if (!baseProfileResult?.user?.createdAt)
       return {
         index: null,
         message: null,
@@ -59,7 +62,7 @@ export const publicAnalyzeAction = streamResponse(async function* () {
     yield {
       index: 3,
       message: '获取Github Contributions成功。',
-      error: contributionsError,
+      error: contributionsError?.toString(),
     }
 
     // 查询 GitHub Starred Repositories
@@ -68,7 +71,7 @@ export const publicAnalyzeAction = streamResponse(async function* () {
     yield {
       index: 4,
       message: '获取Github Starred Repositories成功。',
-      error: starredRepositoriesError,
+      error: starredRepositoriesError?.toString(),
     }
 
     // 查询 GitHub Pull Requests
@@ -77,7 +80,7 @@ export const publicAnalyzeAction = streamResponse(async function* () {
     yield {
       index: 5,
       message: '获取Github Pull Requests成功。',
-      error: pullRequestsError,
+      error: pullRequestsError?.toString(),
     }
 
     // 查询 GitHub Issues
@@ -87,7 +90,7 @@ export const publicAnalyzeAction = streamResponse(async function* () {
     yield {
       index: 6,
       message: '获取Github Issues成功。',
-      error: issuesError,
+      error: issuesError?.toString(),
     }
 
     // 查询 GitHub Followers
@@ -97,7 +100,7 @@ export const publicAnalyzeAction = streamResponse(async function* () {
     yield {
       index: 7,
       message: '获取Github Followers成功。',
-      error: followersError,
+      error: followersError?.toString(),
     }
 
     // 查询 GitHub Following
@@ -107,7 +110,7 @@ export const publicAnalyzeAction = streamResponse(async function* () {
     yield {
       index: 8,
       message: '获取Github Following成功。',
-      error: followingError,
+      error: followingError?.toString(),
     }
 
     // 查询 GitHub Repository Discussion Comments
@@ -118,7 +121,7 @@ export const publicAnalyzeAction = streamResponse(async function* () {
     yield {
       index: 10,
       message: '获取Github Repository Discussion Comments成功。',
-      error: repositoryDiscussionCommentsError,
+      error: repositoryDiscussionCommentsError?.toString(),
     }
 
     const originData: GithubDetails = {
@@ -148,8 +151,17 @@ export const publicAnalyzeAction = streamResponse(async function* () {
       error: null,
     }
 
-    const analysisResult = await handleOriginGithubData(originData.user)
-    yield { index: 12, message: '数据分析成功。', error: null }
+    const analyzedUserResult = await handleOriginGithubData(originData.user)
+    yield { index: 12, message: '数据初步分析成功。', error: null }
+
+    const inferUserNationAndSkillsResult =
+      await inferUserNationAndSkillsByOpenai(analyzedUserResult)
+    yield { index: 13, message: '通过Openai gpt-4o分析推测成功。', error: null }
+    const _id = await insertAnalysis({
+      ...analyzedUserResult,
+      infer: inferUserNationAndSkillsResult,
+    })
+    yield { index: 14, message: '所有分析活动均已完成。', error: null, slug: login }
   } catch (e) {
     console.error(e)
     return { index: undefined, message: undefined, error: '未知错误。' }
@@ -175,6 +187,7 @@ const handleOriginGithubData = async (data: GitHubUser) => {
     technicalScore: 0,
     communityImpactScore: 0,
     communityActivityScore: 0,
+    comprehensiveScore: 0,
   }
 
   // 获取仓库详细数据并分析
@@ -281,14 +294,14 @@ const handleOriginGithubData = async (data: GitHubUser) => {
     following: data.following.totalCount,
   })
 
-  const inferUserNationAndSkillsResult = await inferUserNationAndSkillsByOpenai(data)
+  metrics.comprehensiveScore = calculateComprehensiveScore({ ...metrics })
 
   return {
     ...data,
     repositories: repositoriesResult,
     metrics: metrics,
-    infer: inferUserNationAndSkillsResult,
-  }
+    languages: technologyStack,
+  } as GitHubUser
 }
 
 const getRepositoryCommitCountsByMonth = async (repository: Repository) => {
@@ -383,19 +396,25 @@ export const inferUserNationAndSkillsByOpenai = async (data: GitHubUser) => {
     }
   }
   if (data.pullRequests) {
+    console.log('pullRequests')
     for (const pullRequest of data.pullRequests.nodes) {
+      console.log(pullRequest.author.login, data.login)
       if (pullRequest.author.login !== data.login) continue
       activityTime.push(new Date(pullRequest.createdAt))
     }
   }
   if (data.issues) {
+    console.log('issues')
     for (const issue of data.issues.nodes) {
+      console.log(issue.author.login, data.login)
       if (issue.author.login !== data.login) continue
-      if (issue) activityTime.push(new Date(issue.createdAt))
+      activityTime.push(new Date(issue.createdAt))
     }
   }
   if (data.repositoryDiscussionComments) {
+    console.log('repositoryDiscussionComments')
     for (const discussionComment of data.repositoryDiscussionComments.nodes) {
+      console.log(discussionComment.author.login, data.login)
       if (discussionComment.author.login !== data.login) continue
       activityTime.push(new Date(discussionComment.createdAt))
     }

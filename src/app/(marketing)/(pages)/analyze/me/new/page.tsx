@@ -13,46 +13,46 @@ import { useRouter } from 'next/navigation'
 
 const loadingStates = [
   {
-    text: 'Buying a condo',
+    text: 'Start analyzing your github.',
   },
   {
-    text: 'Travelling in a flight',
+    text: 'Successfully connected with GitHub.',
   },
   {
-    text: 'Meeting Tyler Durden',
+    text: 'Get Github Profile data.',
   },
   {
-    text: 'He makes soap',
+    text: 'Get Github Contributions data.',
   },
   {
-    text: 'We goto a bar',
+    text: 'Get Github Starred Repositories data.',
   },
   {
-    text: 'Start a fight',
+    text: 'Get Github Pull Requests data.',
   },
   {
-    text: 'We like it',
+    text: 'Get Github Issues data.',
   },
   {
-    text: 'Welcome to F**** C***',
+    text: 'Get Github Followers data.',
   },
   {
-    text: 'Welcome to F**** C***',
+    text: 'Get Github Following data.',
   },
   {
-    text: 'Welcome to F**** C***',
+    text: 'Get Github Discussion Comments data.',
   },
   {
-    text: 'Welcome to F**** C***',
+    text: 'Get all Github Data data.',
   },
   {
-    text: 'Welcome to F**** C***',
+    text: 'Analyze all public data and public repositories.',
   },
   {
-    text: 'Welcome to F**** C***',
+    text: 'Use OpenAI gpt-4o-mini to deeply analyze.',
   },
   {
-    text: 'Welcome to F**** C***',
+    text: 'All tasks completed！',
   },
 ]
 
@@ -61,14 +61,28 @@ type InteractionButtonsProps = {
   loading: boolean
   setToggleLoader: Dispatch<SetStateAction<boolean>>
   handleAnalyze: () => Promise<void>
+  analysisSlug?: string | null
 }
 
 const InteractionButtons = memo(
-  ({ isAnalyzed, loading, setToggleLoader, handleAnalyze }: InteractionButtonsProps) => {
+  ({
+    isAnalyzed,
+    loading,
+    setToggleLoader,
+    handleAnalyze,
+    analysisSlug,
+  }: InteractionButtonsProps) => {
     const router = useRouter()
-    const handleRedirect = () => {
-      router.push(`/report/asionesjia`)
-    }
+    const handleRedirect = useCallback(() => {
+      router.push(`/report/${analysisSlug}`)
+    }, [analysisSlug])
+    useEffect(() => {
+      if (isAnalyzed) {
+        const timer = setTimeout(handleRedirect, 3000)
+
+        return () => clearTimeout(timer)
+      }
+    }, [isAnalyzed])
     return (
       <div className="w-full p-4 md:p-10">
         <BlurInEffect index={3}>
@@ -140,7 +154,7 @@ const PageLayout = memo(({ isAnalyzed }: PageLayoutProps) => {
       <div className="space-y-4 px-4 pt-4 md:space-y-8 md:px-10 md:pt-10">
         <BlurInEffect index={0}>
           <div className="pb-4 text-3xl font-semibold sm:text-5xl md:pb-8">
-            {isAnalyzed ? 'Your Analysis Completed ✨' : 'Prepare for analysing yourself'}
+            {isAnalyzed ? 'Your Analysis Completed ✨' : 'Prepare for analysing the GitHub account'}
           </div>
           <LineSeparator />
         </BlurInEffect>
@@ -149,7 +163,7 @@ const PageLayout = memo(({ isAnalyzed }: PageLayoutProps) => {
             <div className="text-xl font-normal sm:text-3xl">
               {isAnalyzed
                 ? 'You are about to enter the analysis results page. You will be redirected in 3 seconds.'
-                : 'We will analyze all your GitHub public information as much as possible, including Profile, repository, issue, pull request, organize, discussion, object, etc. You will get a comprehensive analysis soon.'}
+                : 'We will analyze all the GitHub public information as much as possible, including Profile, repository, issue, pull request, organize, discussion, object, etc. You will get a comprehensive analysis soon.'}
             </div>
           </BlurInEffect>
         </div>
@@ -163,7 +177,9 @@ const Page = () => {
     index: number | null | undefined
     message: string | null | undefined
     error: string | null | undefined
-  }>({ index: 0, message: null, error: null })
+    slug?: string | null | undefined
+  }>({ index: 0, message: null, error: null, slug: undefined })
+  const [analysisSlug, setAnalysisSlug] = useState<string | null | undefined>(undefined)
   const [toggleLoader, setToggleLoader] = useState<boolean>(false)
   const [loading, setLoading] = useState<boolean>(false)
   const [isAnalyzed, setIsAnalyzed] = useState<boolean>(false)
@@ -173,15 +189,22 @@ const Page = () => {
       setLoading(true)
       for await (const value of iterateStreamResponse(publicAnalyzeAction())) {
         console.log(value)
+        // @ts-ignore
         setCurrentStep(value)
       }
-      setIsAnalyzed(true)
       setToggleLoader(false)
       setLoading(false)
     } catch (error) {
       console.error(error)
     }
   }, [])
+  useEffect(() => {
+    if (currentStep?.slug) {
+      setAnalysisSlug(currentStep?.slug)
+      setIsAnalyzed(true)
+    }
+  }, [currentStep?.slug])
+
   return (
     <>
       <PageLayout isAnalyzed={isAnalyzed} />
@@ -190,6 +213,7 @@ const Page = () => {
         handleAnalyze={handleAnalyze}
         isAnalyzed={isAnalyzed}
         setToggleLoader={setToggleLoader}
+        analysisSlug={analysisSlug}
       />
       <MultiStepLoader
         loadingStates={loadingStates}

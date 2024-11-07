@@ -1,6 +1,4 @@
 import Link from 'next/link'
-
-import { CommandMenu } from '~/components/command-menu'
 import { Icons } from '~/components/icons'
 import { MainNav } from '~/components/main-nav'
 import { MobileNav } from '~/components/mobile-nav'
@@ -11,7 +9,12 @@ import { cn } from '~/lib/utils'
 import UserDropdownMenu from '~/components/user-dropdown-menu'
 import { auth } from '~/server/auth'
 
-export async function SiteHeader() {
+type SiteHeaderProps = {
+  params: Promise<{ slug: string }>
+}
+
+export async function SiteHeader({ params }: SiteHeaderProps) {
+  const paramsStore = await params
   const session = await auth()
   let stars = 300 // Default value
 
@@ -44,28 +47,26 @@ export async function SiteHeader() {
     >
       <div className="container flex h-16 items-center">
         <MainNav />
-        <MobileNav />
+        <MobileNav slug={paramsStore?.slug} />
         <div className="flex flex-1 items-center justify-between gap-2 md:justify-end">
-          <Link
-            className={cn(
-              buttonVariants({
-                variant: 'rainbow',
-              }),
-              'hidden md:inline-flex',
-            )}
-            target="_blank"
-            href={siteConfig.links.github}
-          >
-            <div className="flex items-center">
-              <Icons.gitHub className="size-4" />
-              <span className="ml-1 lg:hidden">Star</span>
-              <span className="ml-1 hidden lg:inline">Star on GitHub</span>{' '}
-            </div>
-          </Link>
+          {/*<Link*/}
+          {/*  className={cn(*/}
+          {/*    buttonVariants({*/}
+          {/*      variant: 'rainbow',*/}
+          {/*    }),*/}
+          {/*    'hidden md:inline-flex',*/}
+          {/*  )}*/}
+          {/*  target="_blank"*/}
+          {/*  href={siteConfig.links.github}*/}
+          {/*>*/}
+          {/*  <div className="flex items-center">*/}
+          {/*    <Icons.gitHub className="size-4" />*/}
+          {/*    <span className="ml-1 lg:hidden">Star</span>*/}
+          {/*    <span className="ml-1 hidden lg:inline">Star on GitHub</span>{' '}*/}
+          {/*  </div>*/}
+          {/*</Link>*/}
 
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            <CommandMenu />
-          </div>
+          <div className="w-full flex-1 md:w-auto md:flex-none">{/*<CommandMenu />*/}</div>
           <nav className="flex items-center gap-1">
             <Link href={siteConfig.links.github} target="_blank" rel="noreferrer">
               <div

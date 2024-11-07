@@ -1,4 +1,4 @@
-import { RepositoryMetricsConnection } from '~/types/metrics'
+import { Metrics, RepositoryMetricsConnection } from '~/types/metrics'
 
 export type GithubDetails = {
   user: GitHubUser
@@ -177,6 +177,12 @@ export type GitHubUser = {
   repositoryDiscussionComments: repositoryDiscussionCommentConnection
 
   repositoryContributors: RepositoryContributorConnection[]
+
+  metrics?: Metrics
+
+  infer?: any
+
+  languages?: { name: string; size: number }[]
 }
 
 // 贡献统计结构

@@ -1,6 +1,9 @@
 import { auth } from '~/server/auth'
 import { FocusCardProps } from '~/components/ui/focus-card'
 import NewAnalysis from '~/app/(marketing)/(pages)/analyze/me/_components/new-analysis'
+import { findAnalysisByLogin } from '~/server/mongodb/api'
+import { apiServer } from '~/trpc/server'
+import NewAnyoneAnalysis from '~/app/(marketing)/(pages)/analyze/[anyone]/_components/new_anyone_analysis'
 
 const focusCardData: FocusCardProps[] = [
   {
@@ -25,12 +28,20 @@ type PageProps = {
 const Page = async ({ searchParams }: PageProps) => {
   const searchParamsData = await searchParams
   const session = await auth()
-  // :TODO 从浏览器读取分析记录，暂用伪方法。
-  const isAnalyzed = (): boolean => {
-    return false
+  const mode = searchParamsData?.mode
+  if (mode === 'anyone') {
+    return <NewAnyoneAnalysis />
+  }
+  const isAnalyzed = async (): Promise<boolean> => {
+    const { data: viewerResult, error: viewerError } = await apiServer.github.getViewer()
+    if (viewerResult) {
+      const doc = await findAnalysisByLogin(viewerResult.viewer.login)
+      return !!doc
+    }
+    return true
   }
 
-  if (!isAnalyzed()) {
+  if (!(await isAnalyzed())) {
     return <NewAnalysis session={session} searchParams={searchParamsData} />
   }
 

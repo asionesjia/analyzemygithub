@@ -28,7 +28,23 @@ addition, you can also analyze and evaluate any other Github account.
 
 ## Getting Started
 
-## Documentation
+Before you start, you need to create a GitHub Oauth App and write the ID and Secret into the .env file. In addition, you
+also need to prepare an Openai api key, a postgres database, and a mongodb database, and write them into the .env file.
+Finally, please complete the other fields of .env.
+
+```
+git clone https://github.com/asionesjia/analyzemygithub.git
+
+cd analyzemygithub
+
+npm install
+
+npm run dev
+```
+
+## Demo
+
+演示视频：https://github.com/asionesjia/analyzemygithub/1024.mp4
 
 ## Authors
 

@@ -2,11 +2,11 @@
 
 import { BlurInEffect } from '~/components/ui/blur-in-effect'
 import LineSeparator from '~/components/ui/line-separator'
-import ScopeSelects from '~/app/(marketing)/(pages)/analyze/me/_components/scope-selects'
 import { Input } from '~/components/ui/input'
 import { memo, useState } from 'react'
 import { Button } from '~/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { Label } from '~/components/ui/label'
 
 const InputComponent = memo(() => {
   const [username, setUsername] = useState('')
@@ -14,25 +14,30 @@ const InputComponent = memo(() => {
 
   const handleConfirm = () => {
     if (username) {
-      router.push(`/${username}`)
+      router.push(`/analyze/${username}`)
     }
   }
 
   return (
-    <div>
-      <Input
-        className="text-xl font-normal sm:text-3xl"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
-      <Button onClick={handleConfirm}>确认</Button>
+    <div className="mx-auto w-full p-6 pt-12 md:flex md:max-w-md md:flex-col md:items-center md:justify-between md:space-y-6">
+      <div className="w-full">
+        <Label>Username</Label>
+        <Input
+          className="text-xl font-normal sm:text-3xl"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+      </div>
+      <Button className="w-full" onClick={handleConfirm}>
+        确认
+      </Button>
     </div>
   )
 })
 
 type NewAnalysisProps = {}
 
-const NewAnalysis = ({}: NewAnalysisProps) => {
+const NewAnyoneAnalysis = ({}: NewAnalysisProps) => {
   return (
     <div className="space-y-4 px-4 pt-4 md:space-y-8 md:px-10 md:pt-10">
       <BlurInEffect index={0}>
@@ -43,12 +48,16 @@ const NewAnalysis = ({}: NewAnalysisProps) => {
       </BlurInEffect>
       <div className="space-y-4 md:space-y-8">
         <BlurInEffect index={1}>
+          <div className="text-xl font-normal sm:text-3xl">
+            Please confirm that the username you entered actually exists
+          </div>
+        </BlurInEffect>
+        <BlurInEffect index={2}>
           <InputComponent />
         </BlurInEffect>
-        <ScopeSelects />
       </div>
     </div>
   )
 }
 
-export default NewAnalysis
+export default NewAnyoneAnalysis

@@ -516,12 +516,12 @@ query paginate($username: String!, $cursor: String) {
       nodes {
         body           # 评论正文，用于分析技术见解。
         createdAt      # 创建时间，标记用户活跃期。
+        author {
+          login
+        }
         discussion {
           title        # 关联讨论的标题，展示评论主题。
           url          # 讨论的链接，便于跳转到原帖。        
-          author {
-            login
-          }
           repository {
             owner {
               login

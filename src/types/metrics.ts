@@ -17,6 +17,7 @@ export type Metrics = {
   technicalScore: number
   communityImpactScore: number
   communityActivityScore: number
+  comprehensiveScore: number
 }
 
 export type RepositoryMetricsConnection = {

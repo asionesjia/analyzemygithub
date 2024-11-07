@@ -62,7 +62,7 @@ const Hero = async ({}: HeroProps) => {
                     </BlurInEffect>
                     <BlurInEffect index={2}>
                       <Link
-                        href="/analyze?mode=anyone"
+                        href="/analyze/me?mode=anyone"
                         className={cn(
                           buttonVariants({
                             size: 'lg',

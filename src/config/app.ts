@@ -2,32 +2,45 @@ import { MainNavItem, SidebarNavItem } from '~/types'
 
 interface AppConfig {
   mainNav: MainNavItem[]
-  sidebarNav: SidebarNavItem[]
+  sidebarNav: (slug: string) => SidebarNavItem[]
 }
 
 export const appConfig: AppConfig = {
   mainNav: [
     {
       title: 'Trend',
-      href: '/1',
+      href: '/trend',
     },
     {
       title: 'Recommend',
-      href: '/2',
+      href: '/recommend',
     },
   ],
-  sidebarNav: [
+  sidebarNav: (slug) => [
     {
-      title: 'Overview',
+      title: 'Analytics',
+      href: `/report/${slug}`,
       items: [
         {
-          title: 'Report',
-          href: '/3',
+          title: 'Overview',
+          href: `/report/${slug}`,
+        },
+        {
+          title: 'Languages',
+          href: `/report/${slug}/languages`,
+        },
+        {
+          title: 'Skills',
+          href: `/report/${slug}/skills`,
+        },
+        {
+          title: 'Contributions',
+          href: `/report/${slug}/contributions`,
         },
       ],
     },
     {
-      title: 'Analytics',
+      title: 'Other',
       items: [
         {
           title: 'TalendRank',
